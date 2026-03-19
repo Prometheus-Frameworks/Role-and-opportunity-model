@@ -1,4 +1,4 @@
-import type { NamedScenario } from '../../scoring/evaluateRoleProfile.ts';
+import type { NamedScenario } from '../../types/scenario.ts';
 
 export const alphaWrRole: NamedScenario = {
   scenarioId: 'alpha-wr',
