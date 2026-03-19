@@ -5,7 +5,8 @@
   "description": "Deterministic WR/TE role and opportunity intelligence engine MVP.",
   "type": "module",
   "scripts": {
-    "dev": "node src/index.ts",
+    "dev": "node src/server.ts",
+    "start": "node src/server.ts",
     "test": "node --test tests/**/*.test.ts"
   },
   "keywords": [
