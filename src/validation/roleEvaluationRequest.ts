@@ -329,3 +329,73 @@ export const validateBatchRoleEvaluationRequest = (input: unknown): ValidationRe
     data,
   };
 };
+
+export interface UpstreamRoleEvaluationRequest {
+  playerId?: string;
+  team?: string;
+  season?: number;
+  week?: number;
+  scenarioId?: string;
+  scenarioName?: string;
+  explanationLevel?: ExplanationLevel;
+}
+
+export const validateUpstreamRoleEvaluationRequest = (input: unknown): ValidationResult<UpstreamRoleEvaluationRequest> => {
+  if (!isRecord(input)) {
+    return {
+      success: false,
+      errors: [{ field: 'body', message: 'must be an object' }],
+    };
+  }
+
+  const issues: ValidationIssue[] = [];
+  const playerId = readString(input, 'body', 'player_id', issues, false);
+  const team = readString(input, 'body', 'team', issues, false);
+  const scenarioId = readString(input, 'body', 'scenarioId', issues, false);
+  const scenarioName = readString(input, 'body', 'scenarioName', issues, false);
+  const explanationLevel = readExplanationLevel(input, 'body', 'explanationLevel', issues);
+
+  const seasonValue = input.season;
+  let season: number | undefined;
+  if (seasonValue !== undefined) {
+    if (typeof seasonValue !== 'number' || Number.isNaN(seasonValue)) {
+      issues.push({ field: 'body.season', message: 'must be a number' });
+    } else {
+      season = seasonValue;
+    }
+  }
+
+  const weekValue = input.week;
+  let week: number | undefined;
+  if (weekValue !== undefined) {
+    if (typeof weekValue !== 'number' || Number.isNaN(weekValue)) {
+      issues.push({ field: 'body.week', message: 'must be a number' });
+    } else {
+      week = weekValue;
+    }
+  }
+
+  if (!playerId && !team) {
+    issues.push({ field: 'body', message: 'must include at least one identifier: player_id or team' });
+  }
+
+  if (issues.length > 0) {
+    return {
+      success: false,
+      errors: issues,
+    };
+  }
+
+  return {
+    success: true,
+    data: {
+      playerId,
+      team,
+      season,
+      week,
+      scenarioId,
+      scenarioName,
+      explanationLevel: explanationLevel ?? 'standard',
+    },
+  };
+};

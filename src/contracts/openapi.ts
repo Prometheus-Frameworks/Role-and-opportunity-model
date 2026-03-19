@@ -72,6 +72,32 @@ const successExample = {
   },
 } as const;
 
+const upstreamRequestExample = {
+  player_id: 'wr-alpha-001',
+  team: 'Metro Meteors',
+  season: 2025,
+  week: 4,
+  scenarioId: 'tiber-alpha',
+  scenarioName: 'TIBER alpha evaluation',
+  explanationLevel: 'full',
+} as const;
+
+const upstreamSuccessExample = {
+  ...successExample,
+  scenarioId: 'tiber-alpha',
+  scenarioName: 'TIBER alpha evaluation',
+  dataSource: {
+    name: 'TIBER-Data',
+    baseUrl: 'http://localhost:3001',
+    lookup: {
+      player_id: 'wr-alpha-001',
+      team: 'Metro Meteors',
+      season: 2025,
+      week: 4,
+    },
+  },
+} as const;
+
 const partialBatchResponseExample = {
   meta: buildMeta(),
   partialSuccess: true,
@@ -212,6 +238,20 @@ export const getOpenApiDocument = () => ({
           scenarioName: { type: 'string' },
           explanationLevel: { $ref: '#/components/schemas/ExplanationLevel' },
         },
+      },
+      UpstreamRoleEvaluationRequest: {
+        type: 'object',
+        additionalProperties: false,
+        properties: {
+          player_id: { type: 'string' },
+          team: { type: 'string' },
+          season: { type: 'number' },
+          week: { type: 'number' },
+          scenarioId: { type: 'string' },
+          scenarioName: { type: 'string' },
+          explanationLevel: { $ref: '#/components/schemas/ExplanationLevel' },
+        },
+        anyOf: [{ required: ['player_id'] }, { required: ['team'] }],
       },
       BatchRequestEnvelope: {
         type: 'object',
@@ -390,6 +430,50 @@ export const getOpenApiDocument = () => ({
           },
           '400': {
             description: 'Validation failure.',
+          },
+        },
+      },
+    },
+    '/api/evaluate/from-data': {
+      post: {
+        tags: ['evaluation'],
+        summary: 'Evaluate one WR/TE role profile from TIBER-Data',
+        description:
+          'Fetches player role inputs from /api/player-role-inputs and team context from /api/team-context before running the deterministic scorer.',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/UpstreamRoleEvaluationRequest' },
+              examples: {
+                default: { value: upstreamRequestExample },
+              },
+            },
+          },
+        },
+        responses: {
+          '200': {
+            description: 'Deterministic evaluation result with upstream source metadata.',
+            content: {
+              'application/json': {
+                schema: { $ref: '#/components/schemas/RoleEvaluationOutput' },
+                examples: {
+                  default: { value: upstreamSuccessExample },
+                },
+              },
+            },
+          },
+          '400': {
+            description: 'Validation failure.',
+          },
+          '404': {
+            description: 'Upstream data was not found.',
+          },
+          '409': {
+            description: 'Upstream data was ambiguous.',
+          },
+          '502': {
+            description: 'Upstream data was incomplete or unavailable.',
           },
         },
       },

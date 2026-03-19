@@ -2,7 +2,7 @@ import { SERVICE_NAME, SERVICE_VERSION, buildMeta } from './config/service.ts';
 import { getOpenApiDocument } from './contracts/openapi.ts';
 import { listScenarios, getScenarioDetail } from './routes/scenarioRoutes.ts';
 import { getHealthResponse } from './routes/healthRoutes.ts';
-import { evaluatePostedScenario, evaluatePostedScenarioBatch } from './routes/evaluateRoutes.ts';
+import { evaluatePostedScenario, evaluatePostedScenarioBatch, evaluateScenarioFromData } from './routes/evaluateRoutes.ts';
 
 const jsonResponse = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body, null, 2), {
@@ -39,6 +39,7 @@ export const app = {
           'GET /api/scenarios',
           'GET /api/scenarios/:scenarioId',
           'POST /api/evaluate',
+          'POST /api/evaluate/from-data',
           'POST /api/evaluate/batch',
         ],
         examples: [
@@ -69,6 +70,11 @@ export const app = {
 
     if (request.method === 'POST' && path === '/api/evaluate') {
       const result = await evaluatePostedScenario(request);
+      return jsonResponse(result.body, result.status);
+    }
+
+    if (request.method === 'POST' && path === '/api/evaluate/from-data') {
+      const result = await evaluateScenarioFromData(request);
       return jsonResponse(result.body, result.status);
     }
 
