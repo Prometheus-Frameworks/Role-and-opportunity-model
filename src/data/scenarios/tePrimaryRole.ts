@@ -1,0 +1,38 @@
+import type { NamedScenario } from '../../scoring/evaluateRoleProfile.ts';
+
+export const tePrimaryRole: NamedScenario = {
+  scenarioId: 'te-primary',
+  scenarioName: 'Primary receiving TE',
+  profile: {
+    playerId: 'te-primary-001',
+    playerName: 'Summit Y',
+    position: 'TE',
+    targetShare: 24,
+    airYardShare: 23,
+    routeParticipation: 82,
+    slotRate: 34,
+    inlineRate: 51,
+    wideRate: 15,
+    redZoneTargetShare: 26,
+    firstReadShare: 22,
+    averageDepthOfTarget: 10.1,
+    explosiveTargetRate: 12,
+    personnelVersatility: 84,
+    competitionForRole: 29,
+    injuryRisk: 28,
+    vacatedTargetsAvailable: 46,
+  },
+  context: {
+    teamId: 'TM-TEN',
+    teamName: 'Summit Stallions',
+    passRateOverExpected: 2,
+    neutralPassRate: 57,
+    redZonePassRate: 58,
+    paceIndex: 58,
+    quarterbackStability: 78,
+    playCallerContinuity: 74,
+    targetCompetitionIndex: 41,
+    receiverRoomCertainty: 77,
+    vacatedTargetShare: 31,
+  },
+};

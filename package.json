@@ -1,0 +1,22 @@
+{
+  "name": "role-and-opportunity-model",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Deterministic WR/TE role and opportunity intelligence engine MVP.",
+  "type": "module",
+  "scripts": {
+    "dev": "node src/index.ts",
+    "test": "node --test tests/**/*.test.ts"
+  },
+  "keywords": [
+    "typescript",
+    "nfl",
+    "roles",
+    "opportunity",
+    "wr",
+    "te"
+  ],
+  "engines": {
+    "node": ">=22"
+  }
+}

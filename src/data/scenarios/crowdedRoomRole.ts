@@ -1,0 +1,38 @@
+import type { NamedScenario } from '../../scoring/evaluateRoleProfile.ts';
+
+export const crowdedRoomRole: NamedScenario = {
+  scenarioId: 'crowded-room',
+  scenarioName: 'Crowded ambiguous room',
+  profile: {
+    playerId: 'wr-crowded-001',
+    playerName: 'Vale Q',
+    position: 'WR',
+    targetShare: 15,
+    airYardShare: 17,
+    routeParticipation: 63,
+    slotRate: 41,
+    inlineRate: 0,
+    wideRate: 59,
+    redZoneTargetShare: 11,
+    firstReadShare: 14,
+    averageDepthOfTarget: 11.9,
+    explosiveTargetRate: 9,
+    personnelVersatility: 52,
+    competitionForRole: 78,
+    injuryRisk: 31,
+    vacatedTargetsAvailable: 19,
+  },
+  context: {
+    teamId: 'TM-CRW',
+    teamName: 'Cinder Wolves',
+    passRateOverExpected: -4,
+    neutralPassRate: 50,
+    redZonePassRate: 47,
+    paceIndex: 49,
+    quarterbackStability: 53,
+    playCallerContinuity: 46,
+    targetCompetitionIndex: 76,
+    receiverRoomCertainty: 38,
+    vacatedTargetShare: 16,
+  },
+};
