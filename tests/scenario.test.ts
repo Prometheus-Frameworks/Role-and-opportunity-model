@@ -34,4 +34,6 @@ test('primary TE preserves a strong role value profile', () => {
 
   assert.equal(te.roleArchetype, 'TE1');
   assert.ok(te.scores.roleValue >= 60);
+  assert.ok(['strong', 'solid', 'mixed', 'weak'].includes(te.verdict));
+  assert.ok(te.primaryReason.length > 20);
 });

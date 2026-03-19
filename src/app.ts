@@ -1,7 +1,7 @@
 import { SERVICE_NAME, SERVICE_VERSION, buildMeta } from './config/service.ts';
 import { listScenarios, getScenarioDetail } from './routes/scenarioRoutes.ts';
 import { getHealthResponse } from './routes/healthRoutes.ts';
-import { evaluatePostedScenario } from './routes/evaluateRoutes.ts';
+import { evaluatePostedScenario, evaluatePostedScenarioBatch } from './routes/evaluateRoutes.ts';
 
 const jsonResponse = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body, null, 2), {
@@ -30,7 +30,14 @@ export const app = {
         service: SERVICE_NAME,
         version: SERVICE_VERSION,
         description: 'Deterministic WR/TE role intelligence API.',
-        endpoints: ['GET /', 'GET /health', 'GET /api/scenarios', 'GET /api/scenarios/:scenarioId', 'POST /api/evaluate'],
+        endpoints: [
+          'GET /',
+          'GET /health',
+          'GET /api/scenarios',
+          'GET /api/scenarios/:scenarioId',
+          'POST /api/evaluate',
+          'POST /api/evaluate/batch',
+        ],
       });
     }
 
@@ -50,6 +57,11 @@ export const app = {
 
     if (request.method === 'POST' && path === '/api/evaluate') {
       const result = await evaluatePostedScenario(request);
+      return jsonResponse(result.body, result.status);
+    }
+
+    if (request.method === 'POST' && path === '/api/evaluate/batch') {
+      const result = await evaluatePostedScenarioBatch(request);
       return jsonResponse(result.body, result.status);
     }
 
