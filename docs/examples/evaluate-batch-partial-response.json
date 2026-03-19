@@ -1,0 +1,90 @@
+{
+  "meta": {
+    "service": "role-and-opportunity-model",
+    "evaluatedAt": "2026-03-19T00:00:00.000Z",
+    "version": "0.1.0"
+  },
+  "partialSuccess": true,
+  "items": [
+    {
+      "requestIndex": 0,
+      "result": {
+        "scenarioId": "custom-alpha",
+        "scenarioName": "Custom alpha evaluation",
+        "roleArchetype": "X_receiver_alpha",
+        "scores": {
+          "roleValue": 84,
+          "opportunityQuality": 75,
+          "roleStability": 79,
+          "vacatedOpportunity": 61
+        },
+        "compositeScore": 78.6,
+        "verdict": "strong",
+        "flags": [
+          "high-role-value",
+          "favorable-environment",
+          "stable-role",
+          "vacated-volume",
+          "featured-usage"
+        ],
+        "primaryReason": "Atlas X carries a strong role because usage concentration and team context both grade well.",
+        "explanationBullets": [
+          "Atlas X profiles as a X_receiver_alpha with 31% target share and 93% route participation."
+        ],
+        "profile": {
+          "playerId": "wr-alpha-001",
+          "playerName": "Atlas X",
+          "position": "WR",
+          "targetShare": 31,
+          "airYardShare": 38,
+          "routeParticipation": 93,
+          "slotRate": 24,
+          "inlineRate": 0,
+          "wideRate": 76,
+          "redZoneTargetShare": 29,
+          "firstReadShare": 33,
+          "averageDepthOfTarget": 13.8,
+          "explosiveTargetRate": 18,
+          "personnelVersatility": 72,
+          "competitionForRole": 25,
+          "injuryRisk": 22,
+          "vacatedTargetsAvailable": 58
+        },
+        "context": {
+          "teamId": "TM-ALP",
+          "teamName": "Metro Meteors",
+          "passRateOverExpected": 7,
+          "neutralPassRate": 62,
+          "redZonePassRate": 60,
+          "paceIndex": 66,
+          "quarterbackStability": 84,
+          "playCallerContinuity": 81,
+          "targetCompetitionIndex": 34,
+          "receiverRoomCertainty": 79,
+          "vacatedTargetShare": 41
+        },
+        "evaluationMeta": {
+          "requestIndex": 0,
+          "explanationLevel": "short"
+        }
+      }
+    }
+  ],
+  "errors": [
+    {
+      "requestIndex": 1,
+      "error": "Invalid role evaluation request",
+      "details": [
+        {
+          "field": "body[1].context.neutralPassRate",
+          "message": "must be less than or equal to 100"
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "requested": 2,
+    "succeeded": 1,
+    "failed": 1
+  }
+}

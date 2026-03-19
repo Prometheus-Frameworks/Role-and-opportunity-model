@@ -7,10 +7,11 @@ This repository exposes a deterministic HTTP API for evaluating WR and TE receiv
 ## Why it exists
 
 - Deterministic WR/TE-only role intelligence.
-- Railway-ready runtime with no database and no required environment variables beyond an optional `PORT`.
+- Railway-ready runtime with no database and no required environment variables beyond an optional `PORT` and `HOST`.
 - Seeded scenarios that can be browsed and re-evaluated through the API.
 - Typed scoring engine that remains separate from the transport layer.
 - Small, composable output primitives that are easy for downstream systems to consume.
+- Machine-readable contract output through `GET /openapi.json`.
 
 ## Install and run in 30 seconds
 
@@ -19,13 +20,15 @@ npm install
 npm run dev
 ```
 
-The service listens on `process.env.PORT || 3000`.
+The service listens on `process.env.PORT || 3000` and binds to `process.env.HOST || 0.0.0.0`.
 
 ### Production-style start
 
 ```bash
 npm start
 ```
+
+The runtime now sets explicit HTTP timeouts and handles `SIGINT`/`SIGTERM` for more predictable Railway shutdown behavior.
 
 ## Run tests
 
@@ -36,7 +39,7 @@ npm test
 ## API endpoints
 
 ### `GET /`
-Returns a JSON service description with version information and the available endpoints.
+Returns a JSON service description with version information, example file references, and the available endpoints.
 
 ### `GET /health`
 Returns:
@@ -47,6 +50,9 @@ Returns:
   "service": "role-and-opportunity-model"
 }
 ```
+
+### `GET /openapi.json`
+Returns an OpenAPI 3.1 document describing request/response shapes, canonical enums, and batch partial-success behavior.
 
 ### `GET /api/scenarios`
 Returns a compact list of seeded scenarios with:
@@ -63,188 +69,40 @@ Returns the full seeded scenario plus the evaluated output for that scenario.
 ### `POST /api/evaluate`
 Accepts a JSON body containing a `profile` and `context`, plus optional `scenarioId`, `scenarioName`, and `explanationLevel` metadata.
 
-Example request body:
+Canonical enum sets exposed in code and schema:
 
-```json
-{
-  "profile": {
-    "playerId": "wr-alpha-001",
-    "playerName": "Atlas X",
-    "position": "WR",
-    "targetShare": 31,
-    "airYardShare": 38,
-    "routeParticipation": 93,
-    "slotRate": 24,
-    "inlineRate": 0,
-    "wideRate": 76,
-    "redZoneTargetShare": 29,
-    "firstReadShare": 33,
-    "averageDepthOfTarget": 13.8,
-    "explosiveTargetRate": 18,
-    "personnelVersatility": 72,
-    "competitionForRole": 25,
-    "injuryRisk": 22,
-    "vacatedTargetsAvailable": 58
-  },
-  "context": {
-    "teamId": "TM-ALP",
-    "teamName": "Metro Meteors",
-    "passRateOverExpected": 7,
-    "neutralPassRate": 62,
-    "redZonePassRate": 60,
-    "paceIndex": 66,
-    "quarterbackStability": 84,
-    "playCallerContinuity": 81,
-    "targetCompetitionIndex": 34,
-    "receiverRoomCertainty": 79,
-    "vacatedTargetShare": 41
-  },
-  "scenarioId": "custom-alpha",
-  "scenarioName": "Custom alpha evaluation",
-  "explanationLevel": "full"
-}
-```
+- `explanationLevel`: `short`, `standard`, `full`
+- `verdict`: `strong`, `solid`, `mixed`, `weak`
+- `scoreBands`: `elite`, `good`, `mixed`, `poor`
+- `flags`: `high-role-value`, `favorable-environment`, `stable-role`, `vacated-volume`, `featured-usage`, `crowded-target-tree`, `injury-risk`, `environment-volatility`
 
-Single-item evaluations now include deterministic interpretation fields for downstream consumers:
+Example request body: see [`docs/examples/evaluate-request.json`](docs/examples/evaluate-request.json).
 
-- `verdict`: `strong`, `solid`, `mixed`, or `weak`
-- `flags`: deterministic string flags derived from scores and context/profile conditions
+Single-item evaluations include deterministic interpretation fields for downstream consumers:
+
+- `verdict`: canonical recommendation bucket
+- `flags`: canonical machine-readable integration flags
 - `primaryReason`: short human-readable summary sentence
 - `riskNote`: short risk sentence when a deterministic concern is present
-- `scoreBands`: included for `explanationLevel: "full"` and maps each score to `elite`, `good`, `mixed`, or `poor`
+- `scoreBands`: included for `explanationLevel: "full"`
 - `evaluationMeta.explanationLevel`: echoes the explanation verbosity applied to the output
 
 ### `POST /api/evaluate/batch`
-Accepts an array of the same role evaluation request objects used by `POST /api/evaluate`.
+Accepts either:
 
-Example request body:
+- the legacy array of role evaluation request objects, which stays in **strict validation mode** by default, or
+- an envelope `{ "items": [...], "options": { "strict": false } }` to enable **partial-success mode**.
 
-```json
-[
-  {
-    "profile": {
-      "playerId": "wr-alpha-001",
-      "playerName": "Atlas X",
-      "position": "WR",
-      "targetShare": 31,
-      "airYardShare": 38,
-      "routeParticipation": 93,
-      "slotRate": 24,
-      "inlineRate": 0,
-      "wideRate": 76,
-      "redZoneTargetShare": 29,
-      "firstReadShare": 33,
-      "averageDepthOfTarget": 13.8,
-      "explosiveTargetRate": 18,
-      "personnelVersatility": 72,
-      "competitionForRole": 25,
-      "injuryRisk": 22,
-      "vacatedTargetsAvailable": 58
-    },
-    "context": {
-      "teamId": "TM-ALP",
-      "teamName": "Metro Meteors",
-      "passRateOverExpected": 7,
-      "neutralPassRate": 62,
-      "redZonePassRate": 60,
-      "paceIndex": 66,
-      "quarterbackStability": 84,
-      "playCallerContinuity": 81,
-      "targetCompetitionIndex": 34,
-      "receiverRoomCertainty": 79,
-      "vacatedTargetShare": 41
-    },
-    "scenarioId": "custom-alpha",
-    "scenarioName": "Custom alpha evaluation",
-    "explanationLevel": "short"
-  },
-  {
-    "profile": {
-      "playerId": "te-beta-002",
-      "playerName": "Beacon Y",
-      "position": "TE",
-      "targetShare": 23,
-      "airYardShare": 21,
-      "routeParticipation": 82,
-      "slotRate": 19,
-      "inlineRate": 63,
-      "wideRate": 18,
-      "redZoneTargetShare": 27,
-      "firstReadShare": 24,
-      "averageDepthOfTarget": 9.4,
-      "explosiveTargetRate": 11,
-      "personnelVersatility": 74,
-      "competitionForRole": 33,
-      "injuryRisk": 28,
-      "vacatedTargetsAvailable": 39
-    },
-    "context": {
-      "teamId": "TM-BTA",
-      "teamName": "Harbor Fleet",
-      "passRateOverExpected": 2,
-      "neutralPassRate": 56,
-      "redZonePassRate": 57,
-      "paceIndex": 59,
-      "quarterbackStability": 77,
-      "playCallerContinuity": 75,
-      "targetCompetitionIndex": 40,
-      "receiverRoomCertainty": 72,
-      "vacatedTargetShare": 26
-    },
-    "scenarioId": "custom-beta",
-    "scenarioName": "Custom TE evaluation",
-    "explanationLevel": "full"
-  }
-]
-```
+Strict mode keeps the prior behavior: if any item fails validation, the endpoint responds with `400` and aggregated validation details.
 
-Example response shape:
+Partial-success mode returns `200` with:
 
-```json
-{
-  "meta": {
-    "service": "role-and-opportunity-model",
-    "evaluatedAt": "2026-03-19T00:00:00.000Z",
-    "version": "0.1.0"
-  },
-  "items": [
-    {
-      "scenarioId": "custom-alpha",
-      "scenarioName": "Custom alpha evaluation",
-      "verdict": "strong",
-      "flags": ["high-role-value", "stable-role"],
-      "primaryReason": "Atlas X carries a strong role because usage concentration and team context both grade well.",
-      "evaluationMeta": {
-        "requestIndex": 0,
-        "explanationLevel": "short"
-      }
-    }
-  ]
-}
-```
+- `items`: successful evaluations, each wrapped with its `requestIndex`
+- `errors`: structured validation failures with `requestIndex`, `error`, and `details`
+- `summary`: requested, succeeded, and failed counts
+- `partialSuccess`: `true` when at least one item fails validation
 
-## Response notes
+Example files:
 
-- API responses for evaluation and scenario routes include a compact `meta` block with service name, version, and evaluation timestamp.
-- Batch evaluation responses return `items`, where each evaluated item includes `evaluationMeta.requestIndex` and `evaluationMeta.explanationLevel`.
-- Invalid request bodies return HTTP `400` with readable validation details.
-- Positions are limited to `WR` and `TE`.
-- Percentage-like fields are validated against reasonable numeric ranges.
-- `explanationLevel` must be one of `short`, `standard`, or `full`.
-
-## Project structure
-
-```text
-src/
-  app.ts
-  server.ts
-  index.ts
-  scoring/
-  types/
-  data/
-    scenarios/
-  routes/
-  validation/
-  utils/
-tests/
-```
+- [`docs/examples/evaluate-batch-partial-request.json`](docs/examples/evaluate-batch-partial-request.json)
+- [`docs/examples/evaluate-batch-partial-response.json`](docs/examples/evaluate-batch-partial-response.json)

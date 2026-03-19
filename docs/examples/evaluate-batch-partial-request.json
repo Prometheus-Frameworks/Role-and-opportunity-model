@@ -1,0 +1,81 @@
+{
+  "items": [
+    {
+      "profile": {
+        "playerId": "wr-alpha-001",
+        "playerName": "Atlas X",
+        "position": "WR",
+        "targetShare": 31,
+        "airYardShare": 38,
+        "routeParticipation": 93,
+        "slotRate": 24,
+        "inlineRate": 0,
+        "wideRate": 76,
+        "redZoneTargetShare": 29,
+        "firstReadShare": 33,
+        "averageDepthOfTarget": 13.8,
+        "explosiveTargetRate": 18,
+        "personnelVersatility": 72,
+        "competitionForRole": 25,
+        "injuryRisk": 22,
+        "vacatedTargetsAvailable": 58
+      },
+      "context": {
+        "teamId": "TM-ALP",
+        "teamName": "Metro Meteors",
+        "passRateOverExpected": 7,
+        "neutralPassRate": 62,
+        "redZonePassRate": 60,
+        "paceIndex": 66,
+        "quarterbackStability": 84,
+        "playCallerContinuity": 81,
+        "targetCompetitionIndex": 34,
+        "receiverRoomCertainty": 79,
+        "vacatedTargetShare": 41
+      },
+      "scenarioId": "custom-alpha",
+      "scenarioName": "Custom alpha evaluation",
+      "explanationLevel": "short"
+    },
+    {
+      "profile": {
+        "playerId": "bad-beta-002",
+        "playerName": "Broken Example",
+        "position": "TE",
+        "targetShare": 23,
+        "airYardShare": 21,
+        "routeParticipation": 82,
+        "slotRate": 19,
+        "inlineRate": 63,
+        "wideRate": 18,
+        "redZoneTargetShare": 27,
+        "firstReadShare": 24,
+        "averageDepthOfTarget": 9.4,
+        "explosiveTargetRate": 11,
+        "personnelVersatility": 74,
+        "competitionForRole": 33,
+        "injuryRisk": 28,
+        "vacatedTargetsAvailable": 39
+      },
+      "context": {
+        "teamId": "TM-BTA",
+        "teamName": "Harbor Fleet",
+        "passRateOverExpected": 2,
+        "neutralPassRate": 101,
+        "redZonePassRate": 57,
+        "paceIndex": 59,
+        "quarterbackStability": 77,
+        "playCallerContinuity": 75,
+        "targetCompetitionIndex": 40,
+        "receiverRoomCertainty": 72,
+        "vacatedTargetShare": 26
+      },
+      "scenarioId": "custom-beta",
+      "scenarioName": "Broken TE evaluation",
+      "explanationLevel": "full"
+    }
+  ],
+  "options": {
+    "strict": false
+  }
+}

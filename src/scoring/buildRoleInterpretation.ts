@@ -1,17 +1,24 @@
 import type { PlayerRoleProfile } from '../types/playerRole.ts';
-import type { ScoreBands, ScoreBand, ScoreBreakdown, Verdict } from '../types/roleOutput.ts';
+import type { RoleEvaluationFlag, ScoreBands, ScoreBand, ScoreBreakdown, Verdict } from '../types/roleOutput.ts';
 import type { TeamOpportunityContext } from '../types/teamOpportunity.ts';
+import {
+  ROLE_EVALUATION_FLAGS,
+  SCORE_BAND_THRESHOLDS,
+  VERDICT_THRESHOLDS,
+} from '../contracts/constants.ts';
+
+const ROLE_EVALUATION_FLAG_SET = new Set<string>(ROLE_EVALUATION_FLAGS);
 
 const toScoreBand = (score: number): ScoreBand => {
-  if (score >= 80) {
+  if (score >= SCORE_BAND_THRESHOLDS.elite) {
     return 'elite';
   }
 
-  if (score >= 65) {
+  if (score >= SCORE_BAND_THRESHOLDS.good) {
     return 'good';
   }
 
-  if (score >= 45) {
+  if (score >= SCORE_BAND_THRESHOLDS.mixed) {
     return 'mixed';
   }
 
@@ -26,15 +33,15 @@ export const buildScoreBands = (scores: ScoreBreakdown): ScoreBands => ({
 });
 
 export const deriveVerdict = (compositeScore: number): Verdict => {
-  if (compositeScore >= 75) {
+  if (compositeScore >= VERDICT_THRESHOLDS.strong) {
     return 'strong';
   }
 
-  if (compositeScore >= 62) {
+  if (compositeScore >= VERDICT_THRESHOLDS.solid) {
     return 'solid';
   }
 
-  if (compositeScore >= 48) {
+  if (compositeScore >= VERDICT_THRESHOLDS.mixed) {
     return 'mixed';
   }
 
@@ -45,32 +52,38 @@ export const deriveFlags = (
   scores: ScoreBreakdown,
   profile: PlayerRoleProfile,
   context: TeamOpportunityContext,
-): string[] => {
-  const flags: string[] = [];
+): RoleEvaluationFlag[] => {
+  const flags: RoleEvaluationFlag[] = [];
+
+  const pushFlag = (flag: RoleEvaluationFlag) => {
+    if (ROLE_EVALUATION_FLAG_SET.has(flag)) {
+      flags.push(flag);
+    }
+  };
 
   if (scores.roleValue >= 80) {
-    flags.push('high-role-value');
+    pushFlag('high-role-value');
   }
   if (scores.opportunityQuality >= 70) {
-    flags.push('favorable-environment');
+    pushFlag('favorable-environment');
   }
   if (scores.roleStability >= 70) {
-    flags.push('stable-role');
+    pushFlag('stable-role');
   }
   if (scores.vacatedOpportunity >= 60) {
-    flags.push('vacated-volume');
+    pushFlag('vacated-volume');
   }
   if (profile.firstReadShare >= 30 || profile.redZoneTargetShare >= 25) {
-    flags.push('featured-usage');
+    pushFlag('featured-usage');
   }
   if (context.targetCompetitionIndex >= 65 || profile.competitionForRole >= 60) {
-    flags.push('crowded-target-tree');
+    pushFlag('crowded-target-tree');
   }
   if (profile.injuryRisk >= 55) {
-    flags.push('injury-risk');
+    pushFlag('injury-risk');
   }
   if (context.quarterbackStability < 50 || context.playCallerContinuity < 50) {
-    flags.push('environment-volatility');
+    pushFlag('environment-volatility');
   }
 
   return flags;
@@ -98,7 +111,7 @@ export const buildPrimaryReason = (
 };
 
 export const buildRiskNote = (
-  flags: string[],
+  flags: RoleEvaluationFlag[],
   profile: PlayerRoleProfile,
   context: TeamOpportunityContext,
 ): string | undefined => {
