@@ -1,6 +1,7 @@
 import type { PlayerRoleProfile, Position } from '../types/playerRole.ts';
 import type { TeamOpportunityContext } from '../types/teamOpportunity.ts';
-import type { ExplanationLevel } from '../types/roleOutput.ts';
+import { EXPLANATION_LEVELS, type ExplanationLevel } from '../contracts/constants.ts';
+import type { BatchEvaluationRequestEnvelope } from '../types/roleOutput.ts';
 
 export interface RoleEvaluationRequest {
   profile: PlayerRoleProfile;
@@ -103,8 +104,24 @@ const readExplanationLevel = (
     return undefined;
   }
 
-  if (value !== 'short' && value !== 'standard' && value !== 'full') {
-    issues.push({ field: path, message: 'must be short, standard, or full' });
+  if (typeof value !== 'string' || !EXPLANATION_LEVELS.includes(value as ExplanationLevel)) {
+    issues.push({ field: path, message: `must be ${EXPLANATION_LEVELS.join(', ')}` });
+    return undefined;
+  }
+
+  return value as ExplanationLevel;
+};
+
+const readBoolean = (source: UnknownRecord, basePath: string, field: string, issues: ValidationIssue[]) => {
+  const value = source[field];
+  const path = joinPath(basePath, field);
+
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (typeof value !== 'boolean') {
+    issues.push({ field: path, message: 'must be a boolean' });
     return undefined;
   }
 
@@ -159,7 +176,12 @@ const validateContext = (input: unknown, path: string, issues: ValidationIssue[]
   };
 };
 
-const validateRoleEvaluationRequestAtPath = (input: unknown, path: string): ValidationResult<RoleEvaluationRequest> => {
+const withDefaultExplanationLevel = (data: RoleEvaluationRequest): RoleEvaluationRequest => ({
+  ...data,
+  explanationLevel: data.explanationLevel ?? 'standard',
+});
+
+export const validateRoleEvaluationRequestAtPath = (input: unknown, path: string): ValidationResult<RoleEvaluationRequest> => {
   if (!isRecord(input)) {
     return {
       success: false,
@@ -196,38 +218,95 @@ const validateRoleEvaluationRequestAtPath = (input: unknown, path: string): Vali
 export const validateRoleEvaluationRequest = (input: unknown): ValidationResult<RoleEvaluationRequest> => {
   const result = validateRoleEvaluationRequestAtPath(input, 'body');
 
-  if (!result.success) {
+  if (!result.success || !result.data) {
     return result;
   }
 
   return {
     success: true,
+    data: withDefaultExplanationLevel(result.data),
+  };
+};
+
+export interface BatchRoleEvaluationRequest {
+  items: unknown[];
+  strict: boolean;
+}
+
+export const validateBatchRoleEvaluationEnvelope = (input: unknown): ValidationResult<BatchRoleEvaluationRequest> => {
+  if (Array.isArray(input)) {
+    if (input.length === 0) {
+      return {
+        success: false,
+        errors: [{ field: 'body', message: 'must contain at least one role evaluation request' }],
+      };
+    }
+
+    return {
+      success: true,
+      data: {
+        items: input,
+        strict: true,
+      },
+    };
+  }
+
+  if (!isRecord(input)) {
+    return {
+      success: false,
+      errors: [{ field: 'body', message: 'must be an array of role evaluation requests or an object with items' }],
+    };
+  }
+
+  const issues: ValidationIssue[] = [];
+  const envelope = input as BatchEvaluationRequestEnvelope;
+
+  if (!Array.isArray(envelope.items)) {
+    issues.push({ field: 'body.items', message: 'must be an array of role evaluation requests' });
+  } else if (envelope.items.length === 0) {
+    issues.push({ field: 'body.items', message: 'must contain at least one role evaluation request' });
+  }
+
+  let strict = true;
+
+  if (envelope.options !== undefined) {
+    if (!isRecord(envelope.options)) {
+      issues.push({ field: 'body.options', message: 'must be an object' });
+    } else {
+      strict = readBoolean(envelope.options, 'body.options', 'strict', issues) ?? true;
+    }
+  }
+
+  if (issues.length > 0 || !Array.isArray(envelope.items)) {
+    return {
+      success: false,
+      errors: issues,
+    };
+  }
+
+  return {
+    success: true,
     data: {
-      ...result.data!,
-      explanationLevel: result.data!.explanationLevel ?? 'standard',
+      items: envelope.items,
+      strict,
     },
   };
 };
 
 export const validateBatchRoleEvaluationRequest = (input: unknown): ValidationResult<RoleEvaluationRequest[]> => {
-  if (!Array.isArray(input)) {
-    return {
-      success: false,
-      errors: [{ field: 'body', message: 'must be an array of role evaluation requests' }],
-    };
-  }
+  const envelope = validateBatchRoleEvaluationEnvelope(input);
 
-  if (input.length === 0) {
+  if (!envelope.success || !envelope.data) {
     return {
       success: false,
-      errors: [{ field: 'body', message: 'must contain at least one role evaluation request' }],
+      errors: envelope.errors,
     };
   }
 
   const data: RoleEvaluationRequest[] = [];
   const errors: ValidationIssue[] = [];
 
-  input.forEach((item, index) => {
+  envelope.data.items.forEach((item, index) => {
     const result = validateRoleEvaluationRequestAtPath(item, `body[${index}]`);
 
     if (!result.success || !result.data) {
@@ -235,10 +314,7 @@ export const validateBatchRoleEvaluationRequest = (input: unknown): ValidationRe
       return;
     }
 
-    data.push({
-      ...result.data,
-      explanationLevel: result.data.explanationLevel ?? 'standard',
-    });
+    data.push(withDefaultExplanationLevel(result.data));
   });
 
   if (errors.length > 0) {

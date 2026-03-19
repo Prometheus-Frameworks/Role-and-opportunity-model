@@ -1,4 +1,5 @@
 import { SERVICE_NAME, SERVICE_VERSION, buildMeta } from './config/service.ts';
+import { getOpenApiDocument } from './contracts/openapi.ts';
 import { listScenarios, getScenarioDetail } from './routes/scenarioRoutes.ts';
 import { getHealthResponse } from './routes/healthRoutes.ts';
 import { evaluatePostedScenario, evaluatePostedScenarioBatch } from './routes/evaluateRoutes.ts';
@@ -8,6 +9,7 @@ const jsonResponse = (body: unknown, status = 200) =>
     status,
     headers: {
       'content-type': 'application/json; charset=utf-8',
+      'cache-control': 'no-store',
     },
   });
 
@@ -33,16 +35,26 @@ export const app = {
         endpoints: [
           'GET /',
           'GET /health',
+          'GET /openapi.json',
           'GET /api/scenarios',
           'GET /api/scenarios/:scenarioId',
           'POST /api/evaluate',
           'POST /api/evaluate/batch',
+        ],
+        examples: [
+          'docs/examples/evaluate-request.json',
+          'docs/examples/evaluate-batch-partial-request.json',
+          'docs/examples/evaluate-batch-partial-response.json',
         ],
       });
     }
 
     if (request.method === 'GET' && path === '/health') {
       return jsonResponse(getHealthResponse());
+    }
+
+    if (request.method === 'GET' && path === '/openapi.json') {
+      return jsonResponse(getOpenApiDocument());
     }
 
     if (request.method === 'GET' && path === '/api/scenarios') {

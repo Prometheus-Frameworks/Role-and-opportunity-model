@@ -1,9 +1,8 @@
 import type { PlayerRoleProfile, RoleArchetype } from './playerRole.ts';
 import type { TeamOpportunityContext } from './teamOpportunity.ts';
+import type { ExplanationLevel, RoleEvaluationFlag, ScoreBand, Verdict } from '../contracts/constants.ts';
 
-export type ExplanationLevel = 'short' | 'standard' | 'full';
-export type Verdict = 'strong' | 'solid' | 'mixed' | 'weak';
-export type ScoreBand = 'elite' | 'good' | 'mixed' | 'poor';
+export type { ExplanationLevel, RoleEvaluationFlag, ScoreBand, Verdict } from '../contracts/constants.ts';
 
 export interface ScoreBreakdown {
   roleValue: number;
@@ -31,7 +30,7 @@ export interface RoleEvaluationOutput {
   scores: ScoreBreakdown;
   compositeScore: number;
   verdict: Verdict;
-  flags: string[];
+  flags: RoleEvaluationFlag[];
   primaryReason: string;
   riskNote?: string;
   scoreBands?: ScoreBands;
@@ -39,4 +38,25 @@ export interface RoleEvaluationOutput {
   profile: PlayerRoleProfile;
   context: TeamOpportunityContext;
   evaluationMeta: EvaluationMetadata;
+}
+
+export interface BatchEvaluationRequestEnvelope {
+  items: unknown[];
+  options?: {
+    strict?: boolean;
+  };
+}
+
+export interface BatchItemSuccess {
+  requestIndex: number;
+  result: RoleEvaluationOutput;
+}
+
+export interface BatchItemError {
+  requestIndex: number;
+  error: string;
+  details: {
+    field: string;
+    message: string;
+  }[];
 }
