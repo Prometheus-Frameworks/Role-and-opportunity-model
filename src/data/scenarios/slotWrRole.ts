@@ -1,0 +1,38 @@
+import type { NamedScenario } from '../../scoring/evaluateRoleProfile.ts';
+
+export const slotWrRole: NamedScenario = {
+  scenarioId: 'slot-wr',
+  scenarioName: 'Slot-heavy WR chain mover',
+  profile: {
+    playerId: 'wr-slot-001',
+    playerName: 'Harbor Z',
+    position: 'WR',
+    targetShare: 23,
+    airYardShare: 19,
+    routeParticipation: 86,
+    slotRate: 72,
+    inlineRate: 0,
+    wideRate: 28,
+    redZoneTargetShare: 18,
+    firstReadShare: 24,
+    averageDepthOfTarget: 8.4,
+    explosiveTargetRate: 11,
+    personnelVersatility: 61,
+    competitionForRole: 38,
+    injuryRisk: 24,
+    vacatedTargetsAvailable: 34,
+  },
+  context: {
+    teamId: 'TM-SLT',
+    teamName: 'Harbor Hawks',
+    passRateOverExpected: 4,
+    neutralPassRate: 59,
+    redZonePassRate: 56,
+    paceIndex: 61,
+    quarterbackStability: 72,
+    playCallerContinuity: 67,
+    targetCompetitionIndex: 48,
+    receiverRoomCertainty: 70,
+    vacatedTargetShare: 27,
+  },
+};
