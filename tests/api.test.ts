@@ -3,6 +3,23 @@ import assert from 'node:assert/strict';
 import { app } from '../src/app.ts';
 import { EXPLANATION_LEVELS, ROLE_EVALUATION_FLAGS, SCORE_BANDS, VERDICTS } from '../src/contracts/constants.ts';
 
+import { tiberDataClient } from '../src/upstream/tiberDataClient.ts';
+
+const withMockTiberFetch = async (handler: (url: URL) => Response | Promise<Response>, callback: () => Promise<void>) => {
+  const originalFetch = (tiberDataClient as { fetchImpl: typeof fetch }).fetchImpl;
+
+  (tiberDataClient as { fetchImpl: typeof fetch }).fetchImpl = (async (input: URL | RequestInfo, init?: RequestInit) => {
+    const url = new URL(typeof input === 'string' || input instanceof URL ? input.toString() : input.url);
+    return handler(url);
+  }) as typeof fetch;
+
+  try {
+    await callback();
+  } finally {
+    (tiberDataClient as { fetchImpl: typeof fetch }).fetchImpl = originalFetch;
+  }
+};
+
 const validBody = {
   profile: {
     playerId: 'wr-test-001',
@@ -60,6 +77,8 @@ test('GET /openapi.json returns machine-readable contract with canonical enums',
   assert.deepEqual(body.components.schemas.Verdict.enum, [...VERDICTS]);
   assert.deepEqual(body.components.schemas.ScoreBand.enum, [...SCORE_BANDS]);
   assert.deepEqual(body.components.schemas.RoleEvaluationFlag.enum, [...ROLE_EVALUATION_FLAGS]);
+  assert.ok(body.components.schemas.UpstreamRoleEvaluationRequest);
+  assert.equal(body.paths['/api/evaluate/from-data'].post.requestBody.content['application/json'].schema.$ref, '#/components/schemas/UpstreamRoleEvaluationRequest');
   assert.equal(body.paths['/api/evaluate/batch'].post.responses['200'].content['application/json'].examples.partialSuccess.value.summary.failed, 1);
 });
 
@@ -247,4 +266,193 @@ test('POST /api/evaluate/batch supports partial success mode with indexed errors
   assert.equal(body.errors[0].error, 'Invalid role evaluation request');
   assert.ok(body.errors[0].details.some((detail: { field: string; message: string }) => detail.field === 'body[1].profile.position'));
   assert.ok(body.errors[0].details.some((detail: { field: string; message: string }) => detail.field === 'body[1].context.neutralPassRate'));
+});
+
+
+test('POST /api/evaluate/from-data fetches TIBER-Data inputs and keeps deterministic scoring intact', async () => {
+  await withMockTiberFetch((url) => {
+    if (url.pathname === '/api/player-role-inputs') {
+      assert.equal(url.searchParams.get('player_id'), 'wr-test-001');
+      assert.equal(url.searchParams.get('team'), 'Test Team');
+      assert.equal(url.searchParams.get('season'), '2025');
+      assert.equal(url.searchParams.get('week'), '4');
+
+      return Response.json({
+        items: [
+          {
+            player_id: 'wr-test-001',
+            player_name: 'Test Player',
+            position: 'WR',
+            target_share: 26,
+            air_yard_share: 31,
+            route_participation: 88,
+            slot_rate: 32,
+            inline_rate: 0,
+            wide_rate: 68,
+            red_zone_target_share: 24,
+            first_read_share: 27,
+            average_depth_of_target: 12.7,
+            explosive_target_rate: 15,
+            personnel_versatility: 69,
+            competition_for_role: 29,
+            injury_risk: 17,
+            vacated_targets_available: 43,
+          },
+        ],
+      });
+    }
+
+    if (url.pathname === '/api/team-context') {
+      return Response.json({
+        data: [
+          {
+            team_id: 'TM-TST',
+            team_name: 'Test Team',
+            pass_rate_over_expected: 5,
+            neutral_pass_rate: 60,
+            red_zone_pass_rate: 58,
+            pace_index: 64,
+            quarterback_stability: 75,
+            play_caller_continuity: 71,
+            target_competition_index: 44,
+            receiver_room_certainty: 73,
+            vacated_target_share: 29,
+          },
+        ],
+      });
+    }
+
+    throw new Error(`Unexpected URL ${url}`);
+  }, async () => {
+    const response = await app.fetch(
+      new Request('http://local.test/api/evaluate/from-data', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          player_id: 'wr-test-001',
+          team: 'Test Team',
+          season: 2025,
+          week: 4,
+          scenarioName: 'Upstream test scenario',
+        }),
+      }),
+    );
+    const body = await response.json();
+
+    assert.equal(response.status, 200);
+    assert.equal(body.profile.playerId, 'wr-test-001');
+    assert.equal(body.context.teamName, 'Test Team');
+    assert.equal(body.scenarioName, 'Upstream test scenario');
+    assert.equal(body.dataSource.name, 'TIBER-Data');
+    assert.equal(body.dataSource.lookup.player_id, 'wr-test-001');
+    assert.equal(body.evaluationMeta.explanationLevel, 'standard');
+    assert.ok(VERDICTS.includes(body.verdict));
+  });
+});
+
+test('POST /api/evaluate/from-data fails clearly when TIBER-Data results are ambiguous or incomplete', async () => {
+  await withMockTiberFetch((url) => {
+    if (url.pathname === '/api/player-role-inputs') {
+      return Response.json({
+        items: [
+          { player_id: 'wr-test-001' },
+          { player_id: 'wr-test-001-b' },
+        ],
+      });
+    }
+
+    if (url.pathname === '/api/team-context') {
+      return Response.json({
+        items: [
+          {
+            team_id: 'TM-TST',
+            team_name: 'Test Team',
+            pass_rate_over_expected: 5,
+            neutral_pass_rate: 60,
+            red_zone_pass_rate: 58,
+            pace_index: 64,
+            quarterback_stability: 75,
+            play_caller_continuity: 71,
+            target_competition_index: 44,
+            receiver_room_certainty: 73,
+            vacated_target_share: 29,
+          },
+        ],
+      });
+    }
+
+    throw new Error(`Unexpected URL ${url}`);
+  }, async () => {
+    const ambiguousResponse = await app.fetch(
+      new Request('http://local.test/api/evaluate/from-data', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          player_id: 'wr-test-001',
+          team: 'Test Team',
+        }),
+      }),
+    );
+    const ambiguousBody = await ambiguousResponse.json();
+
+    assert.equal(ambiguousResponse.status, 409);
+    assert.match(ambiguousBody.error, /Ambiguous TIBER-Data player role inputs/);
+  });
+
+  await withMockTiberFetch((url) => {
+    if (url.pathname === '/api/player-role-inputs') {
+      return Response.json({
+        items: [
+          {
+            player_id: 'wr-test-001',
+            player_name: 'Test Player',
+            position: 'WR',
+            target_share: 26,
+            air_yard_share: 31,
+            route_participation: 88,
+            slot_rate: 32,
+            inline_rate: 0,
+            wide_rate: 68,
+            red_zone_target_share: 24,
+            first_read_share: 27,
+            average_depth_of_target: 12.7,
+            explosive_target_rate: 15,
+            personnel_versatility: 69,
+            competition_for_role: 29,
+            injury_risk: 17,
+            vacated_targets_available: 43,
+          },
+        ],
+      });
+    }
+
+    if (url.pathname === '/api/team-context') {
+      return Response.json({
+        items: [
+          {
+            team_id: 'TM-TST',
+            team_name: 'Test Team',
+          },
+        ],
+      });
+    }
+
+    throw new Error(`Unexpected URL ${url}`);
+  }, async () => {
+    const incompleteResponse = await app.fetch(
+      new Request('http://local.test/api/evaluate/from-data', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          player_id: 'wr-test-001',
+          team: 'Test Team',
+        }),
+      }),
+    );
+    const incompleteBody = await incompleteResponse.json();
+
+    assert.equal(incompleteResponse.status, 502);
+    assert.equal(incompleteBody.error, 'TIBER-Data team context was incomplete.');
+    assert.ok(incompleteBody.details.some((detail: { field: string; message: string }) => detail.field === 'context.neutralPassRate'));
+  });
 });

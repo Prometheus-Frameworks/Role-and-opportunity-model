@@ -2,12 +2,15 @@ import { buildMeta } from '../config/service.ts';
 import { evaluateRoleProfile } from '../scoring/evaluateRoleProfile.ts';
 import type { BatchItemError, BatchItemSuccess } from '../types/roleOutput.ts';
 import type { NamedScenario } from '../types/scenario.ts';
+import { TiberDataError, tiberDataClient } from '../upstream/tiberDataClient.ts';
 import {
   validateBatchRoleEvaluationEnvelope,
   validateBatchRoleEvaluationRequest,
   validateRoleEvaluationRequest,
   validateRoleEvaluationRequestAtPath,
+  validateUpstreamRoleEvaluationRequest,
   type RoleEvaluationRequest,
+  type UpstreamRoleEvaluationRequest,
 } from '../validation/roleEvaluationRequest.ts';
 
 const INVALID_JSON_RESPONSE = {
@@ -21,6 +24,13 @@ const INVALID_JSON_RESPONSE = {
 const toNamedScenario = (request: RoleEvaluationRequest, index?: number): NamedScenario => ({
   scenarioId: request.scenarioId ?? `custom-evaluation${index !== undefined ? `-${index + 1}` : ''}`,
   scenarioName: request.scenarioName ?? `Custom evaluation${index !== undefined ? ` ${index + 1}` : ''}`,
+  profile: request.profile,
+  context: request.context,
+});
+
+const toUpstreamNamedScenario = (request: UpstreamRoleEvaluationRequest & RoleEvaluationRequest): NamedScenario => ({
+  scenarioId: request.scenarioId ?? `tiber-data-${request.playerId ?? request.team ?? 'evaluation'}`,
+  scenarioName: request.scenarioName ?? `TIBER-Data evaluation for ${request.playerId ?? request.team ?? 'request'}`,
   profile: request.profile,
   context: request.context,
 });
@@ -61,6 +71,66 @@ export const evaluatePostedScenario = async (request: Request) => {
       }),
     },
   };
+};
+
+export const evaluateScenarioFromData = async (request: Request) => {
+  const payload = await readJson(request);
+
+  if ('status' in payload) {
+    return payload;
+  }
+
+  const validation = validateUpstreamRoleEvaluationRequest(payload);
+
+  if (!validation.success || !validation.data) {
+    return {
+      status: 400,
+      body: {
+        error: 'Invalid upstream role evaluation request',
+        details: validation.errors,
+      },
+    };
+  }
+
+  try {
+    const upstreamData = await tiberDataClient.getEvaluationInput(validation.data);
+    const requestData = {
+      ...validation.data,
+      ...upstreamData,
+    };
+
+    return {
+      status: 200,
+      body: {
+        meta: buildMeta(),
+        dataSource: {
+          name: 'TIBER-Data',
+          baseUrl: tiberDataClient.baseUrl,
+          lookup: {
+            player_id: validation.data.playerId,
+            team: validation.data.team,
+            season: validation.data.season,
+            week: validation.data.week,
+          },
+        },
+        ...evaluateRoleProfile(toUpstreamNamedScenario(requestData), {
+          explanationLevel: requestData.explanationLevel,
+        }),
+      },
+    };
+  } catch (error) {
+    if (error instanceof TiberDataError) {
+      return {
+        status: error.status,
+        body: {
+          error: error.message,
+          details: error.details,
+        },
+      };
+    }
+
+    throw error;
+  }
 };
 
 export const evaluatePostedScenarioBatch = async (request: Request) => {
