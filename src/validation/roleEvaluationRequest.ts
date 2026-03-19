@@ -1,11 +1,13 @@
 import type { PlayerRoleProfile, Position } from '../types/playerRole.ts';
 import type { TeamOpportunityContext } from '../types/teamOpportunity.ts';
+import type { ExplanationLevel } from '../types/roleOutput.ts';
 
 export interface RoleEvaluationRequest {
   profile: PlayerRoleProfile;
   context: TeamOpportunityContext;
   scenarioId?: string;
   scenarioName?: string;
+  explanationLevel?: ExplanationLevel;
 }
 
 export interface ValidationIssue {
@@ -88,6 +90,27 @@ const readPosition = (source: UnknownRecord, basePath: string, field: string, is
   return value;
 };
 
+const readExplanationLevel = (
+  source: UnknownRecord,
+  basePath: string,
+  field: string,
+  issues: ValidationIssue[],
+): ExplanationLevel | undefined => {
+  const value = source[field];
+  const path = joinPath(basePath, field);
+
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (value !== 'short' && value !== 'standard' && value !== 'full') {
+    issues.push({ field: path, message: 'must be short, standard, or full' });
+    return undefined;
+  }
+
+  return value;
+};
+
 const validateProfile = (input: unknown, path: string, issues: ValidationIssue[]): PlayerRoleProfile | undefined => {
   if (!isRecord(input)) {
     issues.push({ field: path, message: 'must be an object' });
@@ -136,19 +159,20 @@ const validateContext = (input: unknown, path: string, issues: ValidationIssue[]
   };
 };
 
-export const validateRoleEvaluationRequest = (input: unknown): ValidationResult<RoleEvaluationRequest> => {
+const validateRoleEvaluationRequestAtPath = (input: unknown, path: string): ValidationResult<RoleEvaluationRequest> => {
   if (!isRecord(input)) {
     return {
       success: false,
-      errors: [{ field: 'body', message: 'must be a JSON object' }],
+      errors: [{ field: path, message: 'must be an object' }],
     };
   }
 
   const issues: ValidationIssue[] = [];
-  const profile = validateProfile(input.profile, 'profile', issues);
-  const context = validateContext(input.context, 'context', issues);
-  const scenarioId = readString(input, 'body', 'scenarioId', issues, false);
-  const scenarioName = readString(input, 'body', 'scenarioName', issues, false);
+  const profile = validateProfile(input.profile, joinPath(path, 'profile'), issues);
+  const context = validateContext(input.context, joinPath(path, 'context'), issues);
+  const scenarioId = readString(input, path, 'scenarioId', issues, false);
+  const scenarioName = readString(input, path, 'scenarioName', issues, false);
+  const explanationLevel = readExplanationLevel(input, path, 'explanationLevel', issues);
 
   if (issues.length > 0 || !profile || !context) {
     return {
@@ -164,6 +188,68 @@ export const validateRoleEvaluationRequest = (input: unknown): ValidationResult<
       context,
       scenarioId,
       scenarioName,
+      explanationLevel,
     },
+  };
+};
+
+export const validateRoleEvaluationRequest = (input: unknown): ValidationResult<RoleEvaluationRequest> => {
+  const result = validateRoleEvaluationRequestAtPath(input, 'body');
+
+  if (!result.success) {
+    return result;
+  }
+
+  return {
+    success: true,
+    data: {
+      ...result.data!,
+      explanationLevel: result.data!.explanationLevel ?? 'standard',
+    },
+  };
+};
+
+export const validateBatchRoleEvaluationRequest = (input: unknown): ValidationResult<RoleEvaluationRequest[]> => {
+  if (!Array.isArray(input)) {
+    return {
+      success: false,
+      errors: [{ field: 'body', message: 'must be an array of role evaluation requests' }],
+    };
+  }
+
+  if (input.length === 0) {
+    return {
+      success: false,
+      errors: [{ field: 'body', message: 'must contain at least one role evaluation request' }],
+    };
+  }
+
+  const data: RoleEvaluationRequest[] = [];
+  const errors: ValidationIssue[] = [];
+
+  input.forEach((item, index) => {
+    const result = validateRoleEvaluationRequestAtPath(item, `body[${index}]`);
+
+    if (!result.success || !result.data) {
+      errors.push(...(result.errors ?? []));
+      return;
+    }
+
+    data.push({
+      ...result.data,
+      explanationLevel: result.data.explanationLevel ?? 'standard',
+    });
+  });
+
+  if (errors.length > 0) {
+    return {
+      success: false,
+      errors,
+    };
+  }
+
+  return {
+    success: true,
+    data,
   };
 };
