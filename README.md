@@ -2,33 +2,50 @@
 
 ## What this service does
 
-This repository exposes a deterministic HTTP API for evaluating WR and TE receiving roles. It scores role value, team opportunity quality, role stability, and vacated opportunity for a posted player/context combination or a seeded scenario. It is **not** a fantasy point projection service.
+This repository exposes a deterministic HTTP API for evaluating WR and TE receiving roles and now emits a canonical **TIBER-Data role-opportunity v1** integration surface. The scoring engine still computes internal role scores, but downstream consumers should integrate with the canonical `roleOpportunityRecord` envelope.
 
-## Why it exists
+## Internal output vs canonical output
 
-- Deterministic WR/TE-only role intelligence.
-- Railway-ready runtime with no database and no required environment variables beyond optional `PORT`, `HOST`, and `TIBER_DATA_BASE_URL`.
-- Seeded scenarios that can be browsed and re-evaluated through the API.
-- Typed scoring engine that remains separate from the transport layer.
-- Small, composable output primitives that are easy for downstream systems to consume.
-- Machine-readable contract output through `GET /openapi.json`.
+The repo now keeps two layers separate:
 
-## Install and run in 30 seconds
+- **Internal deterministic evaluation**: role archetype, score breakdowns, verdicts, flags, and explanation text.
+- **Canonical export**: a `roleOpportunityRecord` shaped for TIBER-Data-aligned integrations with identity, scope, role, usage/opportunity metrics, confidence, and source metadata.
+
+The canonical adapter is intentionally strict:
+
+- required canonical identity/scope fields must be present,
+- field names are normalized to the canonical contract,
+- unsupported metrics remain `null` rather than being fabricated,
+- invalid canonical payloads fail validation loudly.
+
+## Alignment with TIBER-Data contract v1
+
+The service now emits canonical records with:
+
+- explicit player identity (`playerId`, `playerName`, `team`, `position`)
+- explicit scope (`season`, `week`)
+- canonical role fields (`primaryRole`, `roleTags`)
+- canonical usage/opportunity metrics grouped under `usage`
+- canonical confidence block (`score`, `tier`, `reasons`)
+- canonical source metadata (`model`, `modelVersion`, `generatedAt`, `inputWindow`, `notes`)
+
+A temporary local compatibility validator mirrors the expected upstream role-opportunity v1 shape so the repo can validate exported records without coupling this package to the upstream repo at runtime.
+
+## Install and run
 
 ```bash
 npm install
 npm run dev
 ```
 
-The service listens on `process.env.PORT || 3000`, binds to `process.env.HOST || 0.0.0.0`, and uses `process.env.TIBER_DATA_BASE_URL || http://localhost:3001` for upstream TIBER-Data fetches.
+The service listens on `PORT` (default `3000`), binds to `HOST` (default `0.0.0.0`), and reads upstream compatibility data from `TIBER_DATA_BASE_URL` (default `http://localhost:3001`).
 
-### Production-style start
+## Runtime hardening
 
-```bash
-npm start
-```
-
-The runtime now sets explicit HTTP timeouts and handles `SIGINT`/`SIGTERM` for more predictable Railway shutdown behavior.
+- `/health` provides liveness.
+- `/ready` validates runtime configuration and reports readiness metadata.
+- startup now validates `PORT` and `TIBER_DATA_BASE_URL`
+- startup/shutdown logging is stable JSON for easier Railway ingestion.
 
 ## Run tests
 
@@ -39,134 +56,156 @@ npm test
 ## API endpoints
 
 ### `GET /`
-Returns a JSON service description with version information, example file references, and the available endpoints.
+Returns service metadata and the list of supported routes.
 
 ### `GET /health`
-Returns:
+Basic liveness check.
 
-```json
-{
-  "ok": true,
-  "service": "role-and-opportunity-model"
-}
-```
+### `GET /ready`
+Readiness check including validated runtime configuration state.
 
 ### `GET /openapi.json`
-Returns an OpenAPI 3.1 document describing request/response shapes, canonical enums, and batch partial-success behavior.
-
-### `GET /api/scenarios`
-Returns a compact list of seeded scenarios with:
-
-- `scenarioId`
-- `scenarioName`
-- `playerName`
-- `position`
-- `summary`
-
-### `GET /api/scenarios/:scenarioId`
-Returns the full seeded scenario plus the evaluated output for that scenario.
+Returns an OpenAPI 3.1 contract that documents both the internal evaluation shape and the canonical role-opportunity export.
 
 ### `POST /api/evaluate`
-Accepts a JSON body containing a `profile` and `context`, plus optional `scenarioId`, `scenarioName`, and `explanationLevel` metadata. This manual path is unchanged and remains the primary way to submit fully formed deterministic scoring payloads directly.
-
-Canonical enum sets exposed in code and schema:
-
-- `explanationLevel`: `short`, `standard`, `full`
-- `verdict`: `strong`, `solid`, `mixed`, `weak`
-- `scoreBands`: `elite`, `good`, `mixed`, `poor`
-- `flags`: `high-role-value`, `favorable-environment`, `stable-role`, `vacated-volume`, `featured-usage`, `crowded-target-tree`, `injury-risk`, `environment-volatility`
-
-Example request body: see [`docs/examples/evaluate-request.json`](docs/examples/evaluate-request.json).
-
-Single-item evaluations include deterministic interpretation fields for downstream consumers:
-
-- `verdict`: canonical recommendation bucket
-- `flags`: canonical machine-readable integration flags
-- `primaryReason`: short human-readable summary sentence
-- `riskNote`: short risk sentence when a deterministic concern is present
-- `scoreBands`: included for `explanationLevel: "full"`
-- `evaluationMeta.explanationLevel`: echoes the explanation verbosity applied to the output
-
+Runs the existing deterministic scorer and returns the **internal** evaluation output.
 
 ### `POST /api/evaluate/from-data`
-Fetches upstream inputs from TIBER-Data, then runs the exact same deterministic scoring engine used by the manual endpoint.
+Fetches compatibility inputs from TIBER-Data and returns the **internal** evaluation output.
 
-Supported identifying fields in the posted JSON body:
+### `POST /api/role-opportunity`
+Runs the scorer and returns the canonical integration-safe envelope.
 
-- `player_id`
-- `team`
+Required additions beyond the legacy request:
+
 - `season`
 - `week`
-- optional `scenarioId`
-- optional `scenarioName`
-- optional `explanationLevel`
-
-The endpoint fetches:
-
-- player role profiles from `/api/compatibility/player-role-profiles`
-- team opportunity context from `/api/compatibility/team-opportunity-context`
-
-Failure behavior is explicit:
-
-- `400` for invalid request payloads
-- `404` when upstream data is missing
-- `409` when upstream results are ambiguous
-- `502` when upstream data is incomplete or unavailable
+- optional `inputWindow`
 
 Example request:
 
 ```json
 {
-  "player_id": "wr-alpha-001",
-  "team": "Metro Meteors",
+  "profile": {
+    "playerId": "wr-alpha-001",
+    "playerName": "Atlas X",
+    "position": "WR",
+    "targetShare": 31,
+    "airYardShare": 38,
+    "routeParticipation": 93,
+    "slotRate": 24,
+    "inlineRate": 0,
+    "wideRate": 76,
+    "redZoneTargetShare": 29,
+    "firstReadShare": 33,
+    "averageDepthOfTarget": 13.8,
+    "explosiveTargetRate": 18,
+    "personnelVersatility": 72,
+    "competitionForRole": 25,
+    "injuryRisk": 22,
+    "vacatedTargetsAvailable": 58
+  },
+  "context": {
+    "teamId": "TM-ALP",
+    "teamName": "Metro Meteors",
+    "passRateOverExpected": 7,
+    "neutralPassRate": 62,
+    "redZonePassRate": 60,
+    "paceIndex": 66,
+    "quarterbackStability": 84,
+    "playCallerContinuity": 81,
+    "targetCompetitionIndex": 34,
+    "receiverRoomCertainty": 79,
+    "vacatedTargetShare": 41
+  },
   "season": 2025,
   "week": 4,
-  "scenarioName": "TIBER-Data evaluation",
-  "explanationLevel": "full"
+  "inputWindow": "season=2025;week=4"
 }
 ```
 
-Example `curl`:
+Example response:
 
-```bash
-curl -X POST http://localhost:3000/api/evaluate/from-data \
-  -H 'content-type: application/json' \
-  -d '{
-    "player_id": "wr-alpha-001",
+```json
+{
+  "meta": {
+    "service": "role-and-opportunity-model",
+    "evaluatedAt": "2026-03-20T00:00:00.000Z",
+    "version": "0.1.0"
+  },
+  "roleOpportunityRecord": {
+    "playerId": "wr-alpha-001",
+    "playerName": "Atlas X",
     "team": "Metro Meteors",
+    "position": "WR",
     "season": 2025,
     "week": 4,
-    "explanationLevel": "standard"
-  }'
+    "primaryRole": "alpha_receiver",
+    "roleTags": ["wr1", "position:wr", "flag:high-role-value"],
+    "usage": {
+      "snapShare": null,
+      "routeParticipation": 93,
+      "targetShare": 31,
+      "airYardShare": 38,
+      "carryShare": null,
+      "rushAttemptShare": null,
+      "redZoneTouchShare": null,
+      "inside10TouchShare": null,
+      "inside5TouchShare": null,
+      "goalLineCarryShare": null,
+      "teamOpportunityShare": null,
+      "snaps": null,
+      "routesRun": null,
+      "targets": null,
+      "carries": null,
+      "redZoneTouches": null,
+      "inside10Touches": null,
+      "inside5Touches": null,
+      "goalLineCarries": null
+    },
+    "confidence": {
+      "score": 78.6,
+      "tier": "high",
+      "reasons": [
+        "Atlas X carries a strong role because usage concentration and team context both grade well."
+      ]
+    },
+    "source": {
+      "model": "role-and-opportunity-model",
+      "modelVersion": "0.1.0",
+      "generatedAt": "2026-03-20T00:00:00.000Z",
+      "inputWindow": "season=2025;week=4",
+      "notes": [
+        "Derived from internal deterministic role evaluation output."
+      ]
+    }
+  },
+  "internalEvaluation": {
+    "...": "existing internal scorer output preserved for debugging"
+  }
+}
 ```
 
-### TIBER-Data configuration
+### `POST /api/role-opportunity/from-data`
+Fetches compatibility inputs from TIBER-Data, runs the deterministic scorer, and emits the canonical role-opportunity envelope. This is the preferred integration path when upstream data is available.
 
-Set `TIBER_DATA_BASE_URL` to point at the upstream service.
+Canonical output requires `season` and `week`; the endpoint rejects requests missing those fields.
+
+## Deterministic demo command
+
+```bash
+curl -X POST http://localhost:3000/api/role-opportunity \
+  -H 'content-type: application/json' \
+  -d @docs/examples/evaluate-request.json
+```
+
+> Note: `docs/examples/evaluate-request.json` is still the internal example file. Add `season` and `week` fields when calling the canonical endpoint.
+
+## TIBER-Data configuration
 
 ```bash
 export TIBER_DATA_BASE_URL=http://localhost:3001
 npm run dev
 ```
 
-The upstream client is intentionally small: no auth, no caching, and no retry layer yet. Scoring remains deterministic and isolated from the transport/client code.
-
-### `POST /api/evaluate/batch`
-Accepts either:
-
-- the legacy array of role evaluation request objects, which stays in **strict validation mode** by default, or
-- an envelope `{ "items": [...], "options": { "strict": false } }` to enable **partial-success mode**.
-
-Strict mode keeps the prior behavior: if any item fails validation, the endpoint responds with `400` and aggregated validation details.
-
-Partial-success mode returns `200` with:
-
-- `items`: successful evaluations, each wrapped with its `requestIndex`
-- `errors`: structured validation failures with `requestIndex`, `error`, and `details`
-- `summary`: requested, succeeded, and failed counts
-- `partialSuccess`: `true` when at least one item fails validation
-
-Example files:
-
-- [`docs/examples/evaluate-batch-partial-request.json`](docs/examples/evaluate-batch-partial-request.json)
-- [`docs/examples/evaluate-batch-partial-response.json`](docs/examples/evaluate-batch-partial-response.json)
+The upstream client remains intentionally small: no auth, no caching, and no retry layer.

@@ -1,11 +1,10 @@
 import { createServer } from 'node:http';
 import { Readable } from 'node:stream';
 import { app } from './app.ts';
+import { getRuntimeConfig, SERVICE_NAME } from './config/service.ts';
 
-const DEFAULT_PORT = 3000;
-const DEFAULT_HOST = '0.0.0.0';
-const port = Number(process.env.PORT ?? `${DEFAULT_PORT}`);
-const host = process.env.HOST ?? DEFAULT_HOST;
+const runtimeConfig = getRuntimeConfig();
+const { port, host, tiberDataBaseUrl } = runtimeConfig;
 
 const server = createServer(async (req, res) => {
   try {
@@ -44,7 +43,7 @@ server.headersTimeout = 62_000;
 server.requestTimeout = 60_000;
 
 const shutdown = (signal: NodeJS.Signals) => {
-  console.log(`Received ${signal}; shutting down role-and-opportunity-model.`);
+  console.log(JSON.stringify({ level: 'info', event: 'shutdown', service: SERVICE_NAME, signal }));
   server.close(() => {
     process.exit(0);
   });
@@ -54,5 +53,14 @@ process.on('SIGINT', shutdown);
 process.on('SIGTERM', shutdown);
 
 server.listen(port, host, () => {
-  console.log(`role-and-opportunity-model listening on http://${host}:${port}`);
+  console.log(
+    JSON.stringify({
+      level: 'info',
+      event: 'startup',
+      service: SERVICE_NAME,
+      host,
+      port,
+      tiberDataBaseUrl,
+    }),
+  );
 });

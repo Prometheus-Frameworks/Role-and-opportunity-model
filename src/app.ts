@@ -1,8 +1,8 @@
 import { SERVICE_NAME, SERVICE_VERSION, buildMeta } from './config/service.ts';
 import { getOpenApiDocument } from './contracts/openapi.ts';
+import { evaluateCanonicalRoleOpportunity, evaluateCanonicalRoleOpportunityFromData, evaluatePostedScenario, evaluatePostedScenarioBatch, evaluateScenarioFromData } from './routes/evaluateRoutes.ts';
+import { getHealthResponse, getReadinessResponse } from './routes/healthRoutes.ts';
 import { listScenarios, getScenarioDetail } from './routes/scenarioRoutes.ts';
-import { getHealthResponse } from './routes/healthRoutes.ts';
-import { evaluatePostedScenario, evaluatePostedScenarioBatch, evaluateScenarioFromData } from './routes/evaluateRoutes.ts';
 
 const jsonResponse = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body, null, 2), {
@@ -31,27 +31,35 @@ export const app = {
         meta: buildMeta(),
         service: SERVICE_NAME,
         version: SERVICE_VERSION,
-        description: 'Deterministic WR/TE role intelligence API.',
+        description: 'Deterministic WR/TE role intelligence API with canonical TIBER-Data role-opportunity exports.',
         endpoints: [
           'GET /',
           'GET /health',
+          'GET /ready',
           'GET /openapi.json',
           'GET /api/scenarios',
           'GET /api/scenarios/:scenarioId',
           'POST /api/evaluate',
           'POST /api/evaluate/from-data',
           'POST /api/evaluate/batch',
+          'POST /api/role-opportunity',
+          'POST /api/role-opportunity/from-data',
         ],
         examples: [
           'docs/examples/evaluate-request.json',
           'docs/examples/evaluate-batch-partial-request.json',
           'docs/examples/evaluate-batch-partial-response.json',
+          'docs/examples/role-opportunity-request.json',
         ],
       });
     }
 
     if (request.method === 'GET' && path === '/health') {
       return jsonResponse(getHealthResponse());
+    }
+
+    if (request.method === 'GET' && path === '/ready') {
+      return jsonResponse(getReadinessResponse());
     }
 
     if (request.method === 'GET' && path === '/openapi.json') {
@@ -73,8 +81,18 @@ export const app = {
       return jsonResponse(result.body, result.status);
     }
 
+    if (request.method === 'POST' && path === '/api/role-opportunity') {
+      const result = await evaluateCanonicalRoleOpportunity(request);
+      return jsonResponse(result.body, result.status);
+    }
+
     if (request.method === 'POST' && path === '/api/evaluate/from-data') {
       const result = await evaluateScenarioFromData(request);
+      return jsonResponse(result.body, result.status);
+    }
+
+    if (request.method === 'POST' && path === '/api/role-opportunity/from-data') {
+      const result = await evaluateCanonicalRoleOpportunityFromData(request);
       return jsonResponse(result.body, result.status);
     }
 
