@@ -439,7 +439,7 @@ export const getOpenApiDocument = () => ({
         tags: ['evaluation'],
         summary: 'Evaluate one WR/TE role profile from TIBER-Data',
         description:
-          'Fetches player role inputs from /api/player-role-inputs and team context from /api/team-context before running the deterministic scorer.',
+          'Fetches compatibility player role profiles from /api/compatibility/player-role-profiles and team opportunity context from /api/compatibility/team-opportunity-context before running the deterministic scorer.',
         requestBody: {
           required: true,
           content: {
