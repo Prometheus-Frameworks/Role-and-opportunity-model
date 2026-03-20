@@ -30,57 +30,17 @@ export class TiberDataError extends Error {
 type UnknownRecord = Record<string, unknown>;
 type FetchLike = typeof fetch;
 
+type ProfileSchemaField = keyof PlayerRoleProfile;
+type ContextSchemaField = keyof TeamOpportunityContext;
+
+type CompatibilityCollectionPayload = {
+  data: unknown[];
+};
+
+const PLAYER_ROLE_PROFILE_PATH = '/api/compatibility/player-role-profiles';
+const TEAM_OPPORTUNITY_CONTEXT_PATH = '/api/compatibility/team-opportunity-context';
+
 const isRecord = (value: unknown): value is UnknownRecord => typeof value === 'object' && value !== null;
-
-const readField = (source: UnknownRecord, fieldNames: string[]): unknown => {
-  for (const fieldName of fieldNames) {
-    if (fieldName in source) {
-      return source[fieldName];
-    }
-  }
-
-  return undefined;
-};
-
-const readString = (source: UnknownRecord, fieldNames: string[], issues: ValidationIssue[], field: string) => {
-  const value = readField(source, fieldNames);
-
-  if (typeof value !== 'string' || value.trim() === '') {
-    issues.push({ field, message: 'is required and must be a string' });
-    return undefined;
-  }
-
-  return value;
-};
-
-const readNumber = (source: UnknownRecord, fieldNames: string[], issues: ValidationIssue[], field: string) => {
-  const value = readField(source, fieldNames);
-
-  if (typeof value !== 'number' || Number.isNaN(value)) {
-    issues.push({ field, message: 'is required and must be a number' });
-    return undefined;
-  }
-
-  return value;
-};
-
-const normalizeCollection = (payload: unknown): unknown[] => {
-  if (Array.isArray(payload)) {
-    return payload;
-  }
-
-  if (!isRecord(payload)) {
-    return [];
-  }
-
-  const collection = readField(payload, ['items', 'data', 'results']);
-
-  if (Array.isArray(collection)) {
-    return collection;
-  }
-
-  return [payload];
-};
 
 const describeLookup = (lookup: EvaluationLookup) =>
   JSON.stringify({
@@ -90,31 +50,123 @@ const describeLookup = (lookup: EvaluationLookup) =>
     ...(lookup.week !== undefined ? { week: lookup.week } : {}),
   });
 
+const readRequiredString = (
+  source: UnknownRecord,
+  sourceField: string,
+  issues: ValidationIssue[],
+  targetField: string,
+) => {
+  const value = source[sourceField];
+
+  if (typeof value !== 'string' || value.trim() === '') {
+    issues.push({ field: targetField, message: 'is required and must be a string' });
+    return undefined;
+  }
+
+  return value;
+};
+
+const readRequiredNumber = (
+  source: UnknownRecord,
+  sourceField: string,
+  issues: ValidationIssue[],
+  targetField: string,
+) => {
+  const value = source[sourceField];
+
+  if (typeof value !== 'number' || Number.isNaN(value)) {
+    issues.push({ field: targetField, message: 'is required and must be a number' });
+    return undefined;
+  }
+
+  return value;
+};
+
+const parseCompatibilityCollection = (path: string, payload: unknown): unknown[] => {
+  if (!isRecord(payload) || !Array.isArray(payload.data)) {
+    throw new TiberDataError(`TIBER-Data response for ${path} must contain a data array.`, { status: 502 });
+  }
+
+  return (payload as CompatibilityCollectionPayload).data;
+};
+
+const PROFILE_STRING_FIELDS: Array<{ sourceField: string; targetField: `profile.${ProfileSchemaField}` }> = [
+  { sourceField: 'player_id', targetField: 'profile.playerId' },
+  { sourceField: 'player_name', targetField: 'profile.playerName' },
+  { sourceField: 'position', targetField: 'profile.position' },
+];
+
+const PROFILE_NUMBER_FIELDS: Array<{ sourceField: string; targetField: `profile.${ProfileSchemaField}` }> = [
+  { sourceField: 'target_share', targetField: 'profile.targetShare' },
+  { sourceField: 'air_yard_share', targetField: 'profile.airYardShare' },
+  { sourceField: 'route_participation', targetField: 'profile.routeParticipation' },
+  { sourceField: 'slot_rate', targetField: 'profile.slotRate' },
+  { sourceField: 'inline_rate', targetField: 'profile.inlineRate' },
+  { sourceField: 'wide_rate', targetField: 'profile.wideRate' },
+  { sourceField: 'red_zone_target_share', targetField: 'profile.redZoneTargetShare' },
+  { sourceField: 'first_read_share', targetField: 'profile.firstReadShare' },
+  { sourceField: 'average_depth_of_target', targetField: 'profile.averageDepthOfTarget' },
+  { sourceField: 'explosive_target_rate', targetField: 'profile.explosiveTargetRate' },
+  { sourceField: 'personnel_versatility', targetField: 'profile.personnelVersatility' },
+  { sourceField: 'competition_for_role', targetField: 'profile.competitionForRole' },
+  { sourceField: 'injury_risk', targetField: 'profile.injuryRisk' },
+  { sourceField: 'vacated_targets_available', targetField: 'profile.vacatedTargetsAvailable' },
+];
+
+const CONTEXT_STRING_FIELDS: Array<{ sourceField: string; targetField: `context.${ContextSchemaField}` }> = [
+  { sourceField: 'team_id', targetField: 'context.teamId' },
+  { sourceField: 'team_name', targetField: 'context.teamName' },
+];
+
+const CONTEXT_NUMBER_FIELDS: Array<{ sourceField: string; targetField: `context.${ContextSchemaField}` }> = [
+  { sourceField: 'pass_rate_over_expected', targetField: 'context.passRateOverExpected' },
+  { sourceField: 'neutral_pass_rate', targetField: 'context.neutralPassRate' },
+  { sourceField: 'red_zone_pass_rate', targetField: 'context.redZonePassRate' },
+  { sourceField: 'pace_index', targetField: 'context.paceIndex' },
+  { sourceField: 'quarterback_stability', targetField: 'context.quarterbackStability' },
+  { sourceField: 'play_caller_continuity', targetField: 'context.playCallerContinuity' },
+  { sourceField: 'target_competition_index', targetField: 'context.targetCompetitionIndex' },
+  { sourceField: 'receiver_room_certainty', targetField: 'context.receiverRoomCertainty' },
+  { sourceField: 'vacated_target_share', targetField: 'context.vacatedTargetShare' },
+];
+
 const parsePlayerRoleProfile = (payload: unknown): PlayerRoleProfile => {
   if (!isRecord(payload)) {
-    throw new TiberDataError('TIBER-Data player role inputs response must contain an object result.', { status: 502 });
+    throw new TiberDataError('TIBER-Data player role profile response must contain an object result.', { status: 502 });
   }
 
   const issues: ValidationIssue[] = [];
-  const position = readString(payload, ['position'], issues, 'profile.position');
+  const strings = Object.fromEntries(
+    PROFILE_STRING_FIELDS.map(({ sourceField, targetField }) => [
+      targetField,
+      readRequiredString(payload, sourceField, issues, targetField),
+    ]),
+  ) as Record<(typeof PROFILE_STRING_FIELDS)[number]['targetField'], string | undefined>;
+  const numbers = Object.fromEntries(
+    PROFILE_NUMBER_FIELDS.map(({ sourceField, targetField }) => [
+      targetField,
+      readRequiredNumber(payload, sourceField, issues, targetField),
+    ]),
+  ) as Record<(typeof PROFILE_NUMBER_FIELDS)[number]['targetField'], number | undefined>;
+
   const profile: PlayerRoleProfile = {
-    playerId: readString(payload, ['playerId', 'player_id'], issues, 'profile.playerId') ?? '',
-    playerName: readString(payload, ['playerName', 'player_name'], issues, 'profile.playerName') ?? '',
-    position: (position as PlayerRoleProfile['position'] | undefined) ?? 'WR',
-    targetShare: readNumber(payload, ['targetShare', 'target_share'], issues, 'profile.targetShare') ?? 0,
-    airYardShare: readNumber(payload, ['airYardShare', 'air_yard_share'], issues, 'profile.airYardShare') ?? 0,
-    routeParticipation: readNumber(payload, ['routeParticipation', 'route_participation'], issues, 'profile.routeParticipation') ?? 0,
-    slotRate: readNumber(payload, ['slotRate', 'slot_rate'], issues, 'profile.slotRate') ?? 0,
-    inlineRate: readNumber(payload, ['inlineRate', 'inline_rate'], issues, 'profile.inlineRate') ?? 0,
-    wideRate: readNumber(payload, ['wideRate', 'wide_rate'], issues, 'profile.wideRate') ?? 0,
-    redZoneTargetShare: readNumber(payload, ['redZoneTargetShare', 'red_zone_target_share'], issues, 'profile.redZoneTargetShare') ?? 0,
-    firstReadShare: readNumber(payload, ['firstReadShare', 'first_read_share'], issues, 'profile.firstReadShare') ?? 0,
-    averageDepthOfTarget: readNumber(payload, ['averageDepthOfTarget', 'average_depth_of_target'], issues, 'profile.averageDepthOfTarget') ?? 0,
-    explosiveTargetRate: readNumber(payload, ['explosiveTargetRate', 'explosive_target_rate'], issues, 'profile.explosiveTargetRate') ?? 0,
-    personnelVersatility: readNumber(payload, ['personnelVersatility', 'personnel_versatility'], issues, 'profile.personnelVersatility') ?? 0,
-    competitionForRole: readNumber(payload, ['competitionForRole', 'competition_for_role'], issues, 'profile.competitionForRole') ?? 0,
-    injuryRisk: readNumber(payload, ['injuryRisk', 'injury_risk'], issues, 'profile.injuryRisk') ?? 0,
-    vacatedTargetsAvailable: readNumber(payload, ['vacatedTargetsAvailable', 'vacated_targets_available'], issues, 'profile.vacatedTargetsAvailable') ?? 0,
+    playerId: strings['profile.playerId'] ?? '',
+    playerName: strings['profile.playerName'] ?? '',
+    position: (strings['profile.position'] as PlayerRoleProfile['position'] | undefined) ?? 'WR',
+    targetShare: numbers['profile.targetShare'] ?? 0,
+    airYardShare: numbers['profile.airYardShare'] ?? 0,
+    routeParticipation: numbers['profile.routeParticipation'] ?? 0,
+    slotRate: numbers['profile.slotRate'] ?? 0,
+    inlineRate: numbers['profile.inlineRate'] ?? 0,
+    wideRate: numbers['profile.wideRate'] ?? 0,
+    redZoneTargetShare: numbers['profile.redZoneTargetShare'] ?? 0,
+    firstReadShare: numbers['profile.firstReadShare'] ?? 0,
+    averageDepthOfTarget: numbers['profile.averageDepthOfTarget'] ?? 0,
+    explosiveTargetRate: numbers['profile.explosiveTargetRate'] ?? 0,
+    personnelVersatility: numbers['profile.personnelVersatility'] ?? 0,
+    competitionForRole: numbers['profile.competitionForRole'] ?? 0,
+    injuryRisk: numbers['profile.injuryRisk'] ?? 0,
+    vacatedTargetsAvailable: numbers['profile.vacatedTargetsAvailable'] ?? 0,
   };
 
   if (profile.position !== 'WR' && profile.position !== 'TE') {
@@ -122,7 +174,7 @@ const parsePlayerRoleProfile = (payload: unknown): PlayerRoleProfile => {
   }
 
   if (issues.length > 0) {
-    throw new TiberDataError('TIBER-Data player role inputs were incomplete.', {
+    throw new TiberDataError('TIBER-Data player role profiles were incomplete.', {
       status: 502,
       details: issues,
     });
@@ -133,26 +185,39 @@ const parsePlayerRoleProfile = (payload: unknown): PlayerRoleProfile => {
 
 const parseTeamOpportunityContext = (payload: unknown): TeamOpportunityContext => {
   if (!isRecord(payload)) {
-    throw new TiberDataError('TIBER-Data team context response must contain an object result.', { status: 502 });
+    throw new TiberDataError('TIBER-Data team opportunity context response must contain an object result.', { status: 502 });
   }
 
   const issues: ValidationIssue[] = [];
+  const strings = Object.fromEntries(
+    CONTEXT_STRING_FIELDS.map(({ sourceField, targetField }) => [
+      targetField,
+      readRequiredString(payload, sourceField, issues, targetField),
+    ]),
+  ) as Record<(typeof CONTEXT_STRING_FIELDS)[number]['targetField'], string | undefined>;
+  const numbers = Object.fromEntries(
+    CONTEXT_NUMBER_FIELDS.map(({ sourceField, targetField }) => [
+      targetField,
+      readRequiredNumber(payload, sourceField, issues, targetField),
+    ]),
+  ) as Record<(typeof CONTEXT_NUMBER_FIELDS)[number]['targetField'], number | undefined>;
+
   const context: TeamOpportunityContext = {
-    teamId: readString(payload, ['teamId', 'team_id'], issues, 'context.teamId') ?? '',
-    teamName: readString(payload, ['teamName', 'team_name'], issues, 'context.teamName') ?? '',
-    passRateOverExpected: readNumber(payload, ['passRateOverExpected', 'pass_rate_over_expected'], issues, 'context.passRateOverExpected') ?? 0,
-    neutralPassRate: readNumber(payload, ['neutralPassRate', 'neutral_pass_rate'], issues, 'context.neutralPassRate') ?? 0,
-    redZonePassRate: readNumber(payload, ['redZonePassRate', 'red_zone_pass_rate'], issues, 'context.redZonePassRate') ?? 0,
-    paceIndex: readNumber(payload, ['paceIndex', 'pace_index'], issues, 'context.paceIndex') ?? 0,
-    quarterbackStability: readNumber(payload, ['quarterbackStability', 'quarterback_stability'], issues, 'context.quarterbackStability') ?? 0,
-    playCallerContinuity: readNumber(payload, ['playCallerContinuity', 'play_caller_continuity'], issues, 'context.playCallerContinuity') ?? 0,
-    targetCompetitionIndex: readNumber(payload, ['targetCompetitionIndex', 'target_competition_index'], issues, 'context.targetCompetitionIndex') ?? 0,
-    receiverRoomCertainty: readNumber(payload, ['receiverRoomCertainty', 'receiver_room_certainty'], issues, 'context.receiverRoomCertainty') ?? 0,
-    vacatedTargetShare: readNumber(payload, ['vacatedTargetShare', 'vacated_target_share'], issues, 'context.vacatedTargetShare') ?? 0,
+    teamId: strings['context.teamId'] ?? '',
+    teamName: strings['context.teamName'] ?? '',
+    passRateOverExpected: numbers['context.passRateOverExpected'] ?? 0,
+    neutralPassRate: numbers['context.neutralPassRate'] ?? 0,
+    redZonePassRate: numbers['context.redZonePassRate'] ?? 0,
+    paceIndex: numbers['context.paceIndex'] ?? 0,
+    quarterbackStability: numbers['context.quarterbackStability'] ?? 0,
+    playCallerContinuity: numbers['context.playCallerContinuity'] ?? 0,
+    targetCompetitionIndex: numbers['context.targetCompetitionIndex'] ?? 0,
+    receiverRoomCertainty: numbers['context.receiverRoomCertainty'] ?? 0,
+    vacatedTargetShare: numbers['context.vacatedTargetShare'] ?? 0,
   };
 
   if (issues.length > 0) {
-    throw new TiberDataError('TIBER-Data team context was incomplete.', {
+    throw new TiberDataError('TIBER-Data team opportunity context was incomplete.', {
       status: 502,
       details: issues,
     });
@@ -206,32 +271,32 @@ export class TiberDataClient {
       throw new TiberDataError(`TIBER-Data returned invalid JSON for ${path}.`, { status: 502 });
     }
 
-    return normalizeCollection(payload);
+    return parseCompatibilityCollection(path, payload);
   }
 
   async getPlayerRoleInputs(lookup: EvaluationLookup): Promise<PlayerRoleProfile> {
-    const results = await this.requestCollection('/api/player-role-inputs', lookup);
+    const results = await this.requestCollection(PLAYER_ROLE_PROFILE_PATH, lookup);
 
     if (results.length === 0) {
-      throw new TiberDataError(`No TIBER-Data player role inputs matched ${describeLookup(lookup)}.`, { status: 404 });
+      throw new TiberDataError(`No TIBER-Data player role profiles matched ${describeLookup(lookup)}.`, { status: 404 });
     }
 
     if (results.length > 1) {
-      throw new TiberDataError(`Ambiguous TIBER-Data player role inputs matched ${describeLookup(lookup)}.`, { status: 409 });
+      throw new TiberDataError(`Ambiguous TIBER-Data player role profiles matched ${describeLookup(lookup)}.`, { status: 409 });
     }
 
     return parsePlayerRoleProfile(results[0]);
   }
 
   async getTeamContext(lookup: EvaluationLookup): Promise<TeamOpportunityContext> {
-    const results = await this.requestCollection('/api/team-context', lookup);
+    const results = await this.requestCollection(TEAM_OPPORTUNITY_CONTEXT_PATH, lookup);
 
     if (results.length === 0) {
-      throw new TiberDataError(`No TIBER-Data team context matched ${describeLookup(lookup)}.`, { status: 404 });
+      throw new TiberDataError(`No TIBER-Data team opportunity context matched ${describeLookup(lookup)}.`, { status: 404 });
     }
 
     if (results.length > 1) {
-      throw new TiberDataError(`Ambiguous TIBER-Data team context matched ${describeLookup(lookup)}.`, { status: 409 });
+      throw new TiberDataError(`Ambiguous TIBER-Data team opportunity context matched ${describeLookup(lookup)}.`, { status: 409 });
     }
 
     return parseTeamOpportunityContext(results[0]);

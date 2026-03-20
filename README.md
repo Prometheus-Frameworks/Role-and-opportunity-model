@@ -103,8 +103,8 @@ Supported identifying fields in the posted JSON body:
 
 The endpoint fetches:
 
-- player role inputs from `/api/player-role-inputs`
-- team context from `/api/team-context`
+- player role profiles from `/api/compatibility/player-role-profiles`
+- team opportunity context from `/api/compatibility/team-opportunity-context`
 
 Failure behavior is explicit:
 

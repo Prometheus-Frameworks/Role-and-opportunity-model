@@ -271,14 +271,16 @@ test('POST /api/evaluate/batch supports partial success mode with indexed errors
 
 test('POST /api/evaluate/from-data fetches TIBER-Data inputs and keeps deterministic scoring intact', async () => {
   await withMockTiberFetch((url) => {
-    if (url.pathname === '/api/player-role-inputs') {
+    if (url.pathname === '/api/compatibility/player-role-profiles') {
       assert.equal(url.searchParams.get('player_id'), 'wr-test-001');
       assert.equal(url.searchParams.get('team'), 'Test Team');
       assert.equal(url.searchParams.get('season'), '2025');
       assert.equal(url.searchParams.get('week'), '4');
 
       return Response.json({
-        items: [
+        dataset: 'player_role_profile_compatibility',
+        count: 1,
+        data: [
           {
             player_id: 'wr-test-001',
             player_name: 'Test Player',
@@ -302,8 +304,10 @@ test('POST /api/evaluate/from-data fetches TIBER-Data inputs and keeps determini
       });
     }
 
-    if (url.pathname === '/api/team-context') {
+    if (url.pathname === '/api/compatibility/team-opportunity-context') {
       return Response.json({
+        dataset: 'team_opportunity_context_compatibility',
+        count: 1,
         data: [
           {
             team_id: 'TM-TST',
@@ -352,18 +356,22 @@ test('POST /api/evaluate/from-data fetches TIBER-Data inputs and keeps determini
 
 test('POST /api/evaluate/from-data fails clearly when TIBER-Data results are ambiguous or incomplete', async () => {
   await withMockTiberFetch((url) => {
-    if (url.pathname === '/api/player-role-inputs') {
+    if (url.pathname === '/api/compatibility/player-role-profiles') {
       return Response.json({
-        items: [
+        dataset: 'player_role_profile_compatibility',
+        count: 2,
+        data: [
           { player_id: 'wr-test-001' },
           { player_id: 'wr-test-001-b' },
         ],
       });
     }
 
-    if (url.pathname === '/api/team-context') {
+    if (url.pathname === '/api/compatibility/team-opportunity-context') {
       return Response.json({
-        items: [
+        dataset: 'team_opportunity_context_compatibility',
+        count: 1,
+        data: [
           {
             team_id: 'TM-TST',
             team_name: 'Test Team',
@@ -396,13 +404,15 @@ test('POST /api/evaluate/from-data fails clearly when TIBER-Data results are amb
     const ambiguousBody = await ambiguousResponse.json();
 
     assert.equal(ambiguousResponse.status, 409);
-    assert.match(ambiguousBody.error, /Ambiguous TIBER-Data player role inputs/);
+    assert.match(ambiguousBody.error, /Ambiguous TIBER-Data player role profiles/);
   });
 
   await withMockTiberFetch((url) => {
-    if (url.pathname === '/api/player-role-inputs') {
+    if (url.pathname === '/api/compatibility/player-role-profiles') {
       return Response.json({
-        items: [
+        dataset: 'player_role_profile_compatibility',
+        count: 1,
+        data: [
           {
             player_id: 'wr-test-001',
             player_name: 'Test Player',
@@ -426,9 +436,11 @@ test('POST /api/evaluate/from-data fails clearly when TIBER-Data results are amb
       });
     }
 
-    if (url.pathname === '/api/team-context') {
+    if (url.pathname === '/api/compatibility/team-opportunity-context') {
       return Response.json({
-        items: [
+        dataset: 'team_opportunity_context_compatibility',
+        count: 1,
+        data: [
           {
             team_id: 'TM-TST',
             team_name: 'Test Team',
@@ -452,7 +464,7 @@ test('POST /api/evaluate/from-data fails clearly when TIBER-Data results are amb
     const incompleteBody = await incompleteResponse.json();
 
     assert.equal(incompleteResponse.status, 502);
-    assert.equal(incompleteBody.error, 'TIBER-Data team context was incomplete.');
+    assert.equal(incompleteBody.error, 'TIBER-Data team opportunity context was incomplete.');
     assert.ok(incompleteBody.details.some((detail: { field: string; message: string }) => detail.field === 'context.neutralPassRate'));
   });
 });
