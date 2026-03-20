@@ -399,3 +399,63 @@ export const validateUpstreamRoleEvaluationRequest = (input: unknown): Validatio
     },
   };
 };
+
+
+export interface CanonicalRoleOpportunityRequest extends RoleEvaluationRequest {
+  season: number;
+  week: number;
+  inputWindow?: string;
+}
+
+export const validateCanonicalRoleOpportunityRequest = (
+  input: unknown,
+): ValidationResult<CanonicalRoleOpportunityRequest> => {
+  const base = validateRoleEvaluationRequest(input);
+
+  if (!base.success || !base.data) {
+    return base as ValidationResult<CanonicalRoleOpportunityRequest>;
+  }
+
+  if (!isRecord(input)) {
+    return {
+      success: false,
+      errors: [{ field: 'body', message: 'must be an object' }],
+    };
+  }
+
+  const issues: ValidationIssue[] = [];
+  const seasonValue = input.season;
+  const weekValue = input.week;
+  const inputWindow = readString(input, 'body', 'inputWindow', issues, false);
+
+  let season: number | undefined;
+  if (typeof seasonValue !== 'number' || Number.isNaN(seasonValue) || !Number.isInteger(seasonValue)) {
+    issues.push({ field: 'body.season', message: 'must be an integer' });
+  } else {
+    season = seasonValue;
+  }
+
+  let week: number | undefined;
+  if (typeof weekValue !== 'number' || Number.isNaN(weekValue) || !Number.isInteger(weekValue) || weekValue < 1 || weekValue > 25) {
+    issues.push({ field: 'body.week', message: 'must be an integer between 1 and 25' });
+  } else {
+    week = weekValue;
+  }
+
+  if (issues.length > 0 || season === undefined || week === undefined) {
+    return {
+      success: false,
+      errors: issues,
+    };
+  }
+
+  return {
+    success: true,
+    data: {
+      ...base.data,
+      season,
+      week,
+      inputWindow,
+    },
+  };
+};

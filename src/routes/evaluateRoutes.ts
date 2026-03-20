@@ -1,4 +1,5 @@
 import { buildMeta } from '../config/service.ts';
+import { buildCanonicalRoleOpportunityEnvelope } from '../services/roleOpportunityService.ts';
 import { evaluateRoleProfile } from '../scoring/evaluateRoleProfile.ts';
 import type { BatchItemError, BatchItemSuccess } from '../types/roleOutput.ts';
 import type { NamedScenario } from '../types/scenario.ts';
@@ -6,6 +7,7 @@ import { TiberDataError, tiberDataClient } from '../upstream/tiberDataClient.ts'
 import {
   validateBatchRoleEvaluationEnvelope,
   validateBatchRoleEvaluationRequest,
+  validateCanonicalRoleOpportunityRequest,
   validateRoleEvaluationRequest,
   validateRoleEvaluationRequestAtPath,
   validateUpstreamRoleEvaluationRequest,
@@ -73,6 +75,39 @@ export const evaluatePostedScenario = async (request: Request) => {
   };
 };
 
+export const evaluateCanonicalRoleOpportunity = async (request: Request) => {
+  const payload = await readJson(request);
+
+  if ('status' in payload) {
+    return payload;
+  }
+
+  const validation = validateCanonicalRoleOpportunityRequest(payload);
+
+  if (!validation.success || !validation.data) {
+    return {
+      status: 400,
+      body: {
+        error: 'Invalid canonical role-opportunity request',
+        details: validation.errors,
+      },
+    };
+  }
+
+  const evaluation = evaluateRoleProfile(toNamedScenario(validation.data), {
+    explanationLevel: validation.data.explanationLevel,
+  });
+
+  return {
+    status: 200,
+    body: buildCanonicalRoleOpportunityEnvelope(evaluation, {
+      season: validation.data.season,
+      week: validation.data.week,
+      inputWindow: validation.data.inputWindow,
+    }),
+  };
+};
+
 export const evaluateScenarioFromData = async (request: Request) => {
   const payload = await readJson(request);
 
@@ -117,6 +152,72 @@ export const evaluateScenarioFromData = async (request: Request) => {
           explanationLevel: requestData.explanationLevel,
         }),
       },
+    };
+  } catch (error) {
+    if (error instanceof TiberDataError) {
+      return {
+        status: error.status,
+        body: {
+          error: error.message,
+          details: error.details,
+        },
+      };
+    }
+
+    throw error;
+  }
+};
+
+export const evaluateCanonicalRoleOpportunityFromData = async (request: Request) => {
+  const payload = await readJson(request);
+
+  if ('status' in payload) {
+    return payload;
+  }
+
+  const validation = validateUpstreamRoleEvaluationRequest(payload);
+
+  if (!validation.success || !validation.data) {
+    return {
+      status: 400,
+      body: {
+        error: 'Invalid canonical role-opportunity request',
+        details: validation.errors,
+      },
+    };
+  }
+
+  if (validation.data.season === undefined || validation.data.week === undefined) {
+    return {
+      status: 400,
+      body: {
+        error: 'Invalid canonical role-opportunity request',
+        details: [
+          { field: 'body.season', message: 'is required for canonical output' },
+          { field: 'body.week', message: 'is required for canonical output' },
+        ],
+      },
+    };
+  }
+
+  try {
+    const upstreamData = await tiberDataClient.getEvaluationInput(validation.data);
+    const requestData = {
+      ...validation.data,
+      ...upstreamData,
+    };
+    const evaluation = evaluateRoleProfile(toUpstreamNamedScenario(requestData), {
+      explanationLevel: requestData.explanationLevel,
+    });
+
+    return {
+      status: 200,
+      body: buildCanonicalRoleOpportunityEnvelope(evaluation, {
+        season: validation.data.season,
+        week: validation.data.week,
+        inputWindow: `season=${validation.data.season};week=${validation.data.week}`,
+        sourceNotes: [`Fetched source inputs from ${tiberDataClient.baseUrl}.`],
+      }),
     };
   } catch (error) {
     if (error instanceof TiberDataError) {

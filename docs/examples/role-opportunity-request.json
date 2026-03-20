@@ -1,0 +1,37 @@
+{
+  "profile": {
+    "playerId": "wr-alpha-001",
+    "playerName": "Atlas X",
+    "position": "WR",
+    "targetShare": 31,
+    "airYardShare": 38,
+    "routeParticipation": 93,
+    "slotRate": 24,
+    "inlineRate": 0,
+    "wideRate": 76,
+    "redZoneTargetShare": 29,
+    "firstReadShare": 33,
+    "averageDepthOfTarget": 13.8,
+    "explosiveTargetRate": 18,
+    "personnelVersatility": 72,
+    "competitionForRole": 25,
+    "injuryRisk": 22,
+    "vacatedTargetsAvailable": 58
+  },
+  "context": {
+    "teamId": "TM-ALP",
+    "teamName": "Metro Meteors",
+    "passRateOverExpected": 7,
+    "neutralPassRate": 62,
+    "redZonePassRate": 60,
+    "paceIndex": 66,
+    "quarterbackStability": 84,
+    "playCallerContinuity": 81,
+    "targetCompetitionIndex": 34,
+    "receiverRoomCertainty": 79,
+    "vacatedTargetShare": 41
+  },
+  "season": 2025,
+  "week": 4,
+  "inputWindow": "season=2025;week=4"
+}

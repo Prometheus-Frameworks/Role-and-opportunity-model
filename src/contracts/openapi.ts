@@ -1,4 +1,5 @@
-import { buildMeta, SERVICE_NAME, SERVICE_VERSION } from '../config/service.ts';
+import { buildMeta, SERVICE_VERSION } from '../config/service.ts';
+import { CONFIDENCE_TIERS, PRIMARY_ROLES, ROLE_OPPORTUNITY_POSITIONS } from './tiberDataRoleOpportunityV1.ts';
 import { EXPLANATION_LEVELS, ROLE_EVALUATION_FLAGS, SCORE_BANDS, VERDICTS } from './constants.ts';
 
 const requestExample = {
@@ -39,11 +40,18 @@ const requestExample = {
   explanationLevel: 'full',
 } as const;
 
+const canonicalRequestExample = {
+  ...requestExample,
+  season: 2025,
+  week: 4,
+  inputWindow: 'season=2025;week=4',
+} as const;
+
 const successExample = {
   meta: buildMeta(),
   scenarioId: 'custom-alpha',
   scenarioName: 'Custom alpha evaluation',
-  roleArchetype: 'X_receiver_alpha',
+  roleArchetype: 'WR1',
   scores: {
     roleValue: 84,
     opportunityQuality: 75,
@@ -54,7 +62,6 @@ const successExample = {
   verdict: 'strong',
   flags: ['high-role-value', 'favorable-environment', 'stable-role', 'vacated-volume', 'featured-usage'],
   primaryReason: 'Atlas X carries a strong role because usage concentration and team context both grade well.',
-  riskNote: undefined,
   scoreBands: {
     roleValue: 'elite',
     opportunityQuality: 'good',
@@ -62,7 +69,7 @@ const successExample = {
     vacatedOpportunity: 'mixed',
   },
   explanationBullets: [
-    'Atlas X profiles as a X_receiver_alpha with 31% target share and 93% route participation.',
+    'Atlas X profiles as a WR1 with 31% target share and 93% route participation.',
     'Metro Meteors offers a favorable passing environment through neutral pass rate, red-zone usage, and quarterback continuity.',
   ],
   profile: requestExample.profile,
@@ -70,6 +77,54 @@ const successExample = {
   evaluationMeta: {
     explanationLevel: 'full',
   },
+} as const;
+
+const canonicalSuccessExample = {
+  meta: buildMeta(),
+  roleOpportunityRecord: {
+    playerId: 'wr-alpha-001',
+    playerName: 'Atlas X',
+    team: 'Metro Meteors',
+    position: 'WR',
+    season: 2025,
+    week: 4,
+    primaryRole: 'alpha_receiver',
+    roleTags: ['wr1', 'position:wr', 'flag:high-role-value'],
+    usage: {
+      snapShare: null,
+      routeParticipation: 93,
+      targetShare: 31,
+      airYardShare: 38,
+      carryShare: null,
+      rushAttemptShare: null,
+      redZoneTouchShare: null,
+      inside10TouchShare: null,
+      inside5TouchShare: null,
+      goalLineCarryShare: null,
+      teamOpportunityShare: null,
+      snaps: null,
+      routesRun: null,
+      targets: null,
+      carries: null,
+      redZoneTouches: null,
+      inside10Touches: null,
+      inside5Touches: null,
+      goalLineCarries: null,
+    },
+    confidence: {
+      score: 78.6,
+      tier: 'high',
+      reasons: ['Atlas X carries a strong role because usage concentration and team context both grade well.'],
+    },
+    source: {
+      model: 'role-and-opportunity-model',
+      modelVersion: '0.1.0',
+      generatedAt: buildMeta().evaluatedAt,
+      inputWindow: 'season=2025;week=4',
+      notes: ['Derived from internal deterministic role evaluation output.'],
+    },
+  },
+  internalEvaluation: successExample,
 } as const;
 
 const upstreamRequestExample = {
@@ -80,22 +135,6 @@ const upstreamRequestExample = {
   scenarioId: 'tiber-alpha',
   scenarioName: 'TIBER alpha evaluation',
   explanationLevel: 'full',
-} as const;
-
-const upstreamSuccessExample = {
-  ...successExample,
-  scenarioId: 'tiber-alpha',
-  scenarioName: 'TIBER alpha evaluation',
-  dataSource: {
-    name: 'TIBER-Data',
-    baseUrl: 'http://localhost:3001',
-    lookup: {
-      player_id: 'wr-alpha-001',
-      team: 'Metro Meteors',
-      season: 2025,
-      week: 4,
-    },
-  },
 } as const;
 
 const partialBatchResponseExample = {
@@ -127,17 +166,26 @@ const partialBatchResponseExample = {
   },
 } as const;
 
+const shareField = {
+  anyOf: [{ type: 'number', minimum: 0, maximum: 100 }, { type: 'null' }],
+};
+
+const countField = {
+  anyOf: [{ type: 'integer', minimum: 0 }, { type: 'null' }],
+};
+
 export const getOpenApiDocument = () => ({
   openapi: '3.1.0',
   info: {
     title: 'Role and Opportunity Model API',
     version: SERVICE_VERSION,
-    description: 'Deterministic WR/TE role intelligence API for downstream integrations.',
+    description: 'Deterministic WR/TE role intelligence API with canonical TIBER-Data role-opportunity v1 exports.',
   },
   servers: [{ url: '/', description: 'Relative server root' }],
   tags: [
     { name: 'service', description: 'Service metadata and health' },
-    { name: 'evaluation', description: 'Role evaluation contract endpoints' },
+    { name: 'evaluation', description: 'Internal deterministic role evaluation endpoints' },
+    { name: 'canonical', description: 'Canonical TIBER-Data role-opportunity v1 endpoints' },
     { name: 'scenarios', description: 'Seeded scenario discovery' },
   ],
   components: {
@@ -146,6 +194,9 @@ export const getOpenApiDocument = () => ({
       Verdict: { type: 'string', enum: [...VERDICTS] },
       ScoreBand: { type: 'string', enum: [...SCORE_BANDS] },
       RoleEvaluationFlag: { type: 'string', enum: [...ROLE_EVALUATION_FLAGS] },
+      PrimaryRole: { type: 'string', enum: [...PRIMARY_ROLES] },
+      ConfidenceTier: { type: 'string', enum: [...CONFIDENCE_TIERS] },
+      RoleOpportunityPosition: { type: 'string', enum: [...ROLE_OPPORTUNITY_POSITIONS] },
       ValidationIssue: {
         type: 'object',
         additionalProperties: false,
@@ -239,6 +290,21 @@ export const getOpenApiDocument = () => ({
           explanationLevel: { $ref: '#/components/schemas/ExplanationLevel' },
         },
       },
+      CanonicalRoleOpportunityRequest: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['profile', 'context', 'season', 'week'],
+        properties: {
+          profile: { $ref: '#/components/schemas/PlayerRoleProfile' },
+          context: { $ref: '#/components/schemas/TeamOpportunityContext' },
+          scenarioId: { type: 'string' },
+          scenarioName: { type: 'string' },
+          explanationLevel: { $ref: '#/components/schemas/ExplanationLevel' },
+          season: { type: 'integer' },
+          week: { type: 'integer', minimum: 1, maximum: 25 },
+          inputWindow: { type: 'string' },
+        },
+      },
       UpstreamRoleEvaluationRequest: {
         type: 'object',
         additionalProperties: false,
@@ -252,6 +318,124 @@ export const getOpenApiDocument = () => ({
           explanationLevel: { $ref: '#/components/schemas/ExplanationLevel' },
         },
         anyOf: [{ required: ['player_id'] }, { required: ['team'] }],
+      },
+      UsageOpportunityMetrics: {
+        type: 'object',
+        additionalProperties: false,
+        required: [
+          'snapShare',
+          'routeParticipation',
+          'targetShare',
+          'airYardShare',
+          'carryShare',
+          'rushAttemptShare',
+          'redZoneTouchShare',
+          'inside10TouchShare',
+          'inside5TouchShare',
+          'goalLineCarryShare',
+          'teamOpportunityShare',
+          'snaps',
+          'routesRun',
+          'targets',
+          'carries',
+          'redZoneTouches',
+          'inside10Touches',
+          'inside5Touches',
+          'goalLineCarries',
+        ],
+        properties: {
+          snapShare: shareField,
+          routeParticipation: shareField,
+          targetShare: shareField,
+          airYardShare: shareField,
+          carryShare: shareField,
+          rushAttemptShare: shareField,
+          redZoneTouchShare: shareField,
+          inside10TouchShare: shareField,
+          inside5TouchShare: shareField,
+          goalLineCarryShare: shareField,
+          teamOpportunityShare: shareField,
+          snaps: countField,
+          routesRun: countField,
+          targets: countField,
+          carries: countField,
+          redZoneTouches: countField,
+          inside10Touches: countField,
+          inside5Touches: countField,
+          goalLineCarries: countField,
+        },
+      },
+      RoleOpportunityConfidence: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['score', 'tier', 'reasons'],
+        properties: {
+          score: { type: 'number', minimum: 0, maximum: 100 },
+          tier: { $ref: '#/components/schemas/ConfidenceTier' },
+          reasons: {
+            type: 'array',
+            minItems: 1,
+            items: { type: 'string' },
+          },
+        },
+      },
+      RoleOpportunitySource: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['model', 'modelVersion', 'generatedAt', 'inputWindow', 'notes'],
+        properties: {
+          model: { type: 'string' },
+          modelVersion: { type: 'string' },
+          generatedAt: { type: 'string', format: 'date-time' },
+          inputWindow: { type: 'string' },
+          notes: {
+            type: 'array',
+            items: { type: 'string' },
+          },
+        },
+      },
+      RoleOpportunityRecord: {
+        type: 'object',
+        additionalProperties: false,
+        required: [
+          'playerId',
+          'playerName',
+          'team',
+          'position',
+          'season',
+          'week',
+          'primaryRole',
+          'roleTags',
+          'usage',
+          'confidence',
+          'source',
+        ],
+        properties: {
+          playerId: { type: 'string' },
+          playerName: { type: 'string' },
+          team: { type: 'string' },
+          position: { $ref: '#/components/schemas/RoleOpportunityPosition' },
+          season: { type: 'integer' },
+          week: { type: 'integer', minimum: 1, maximum: 25 },
+          primaryRole: { $ref: '#/components/schemas/PrimaryRole' },
+          roleTags: {
+            type: 'array',
+            items: { type: 'string' },
+          },
+          usage: { $ref: '#/components/schemas/UsageOpportunityMetrics' },
+          confidence: { $ref: '#/components/schemas/RoleOpportunityConfidence' },
+          source: { $ref: '#/components/schemas/RoleOpportunitySource' },
+        },
+      },
+      CanonicalRoleOpportunityEnvelope: {
+        type: 'object',
+        additionalProperties: true,
+        required: ['meta', 'roleOpportunityRecord'],
+        properties: {
+          meta: { type: 'object' },
+          roleOpportunityRecord: { $ref: '#/components/schemas/RoleOpportunityRecord' },
+          internalEvaluation: { $ref: '#/components/schemas/RoleEvaluationOutput' },
+        },
       },
       BatchRequestEnvelope: {
         type: 'object',
@@ -368,159 +552,49 @@ export const getOpenApiDocument = () => ({
     },
   },
   paths: {
-    '/': {
-      get: {
-        tags: ['service'],
-        summary: 'Service description',
-        responses: {
-          '200': {
-            description: 'Service metadata and endpoint list.',
-          },
-        },
-      },
-    },
-    '/health': {
-      get: {
-        tags: ['service'],
-        summary: 'Health check',
-        responses: {
-          '200': {
-            description: 'Healthy service.',
-          },
-        },
-      },
-    },
-    '/openapi.json': {
-      get: {
-        tags: ['service'],
-        summary: 'Machine-readable OpenAPI contract',
-        responses: {
-          '200': {
-            description: 'OpenAPI 3.1 contract document.',
-          },
-        },
-      },
-    },
+    '/': { get: { tags: ['service'], summary: 'Service description', responses: { '200': { description: 'Service metadata.' } } } },
+    '/health': { get: { tags: ['service'], summary: 'Liveness check', responses: { '200': { description: 'Healthy service.' } } } },
+    '/ready': { get: { tags: ['service'], summary: 'Readiness check', responses: { '200': { description: 'Ready service.' } } } },
+    '/openapi.json': { get: { tags: ['service'], summary: 'Machine-readable OpenAPI contract', responses: { '200': { description: 'OpenAPI 3.1 contract document.' } } } },
     '/api/evaluate': {
       post: {
         tags: ['evaluation'],
         summary: 'Evaluate one WR/TE role profile',
-        requestBody: {
-          required: true,
-          content: {
-            'application/json': {
-              schema: { $ref: '#/components/schemas/RoleEvaluationRequest' },
-              examples: {
-                default: { value: requestExample },
-              },
-            },
-          },
-        },
-        responses: {
-          '200': {
-            description: 'Deterministic evaluation result.',
-            content: {
-              'application/json': {
-                schema: { $ref: '#/components/schemas/RoleEvaluationOutput' },
-                examples: {
-                  default: { value: successExample },
-                },
-              },
-            },
-          },
-          '400': {
-            description: 'Validation failure.',
-          },
-        },
+        requestBody: { required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/RoleEvaluationRequest' }, examples: { default: { value: requestExample } } } } },
+        responses: { '200': { description: 'Internal deterministic evaluation result.', content: { 'application/json': { schema: { $ref: '#/components/schemas/RoleEvaluationOutput' }, examples: { default: { value: successExample } } } } }, '400': { description: 'Validation failure.' } },
+      },
+    },
+    '/api/role-opportunity': {
+      post: {
+        tags: ['canonical'],
+        summary: 'Evaluate one WR/TE role profile and emit canonical role-opportunity output',
+        requestBody: { required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/CanonicalRoleOpportunityRequest' }, examples: { default: { value: canonicalRequestExample } } } } },
+        responses: { '200': { description: 'Canonical role-opportunity envelope.', content: { 'application/json': { schema: { $ref: '#/components/schemas/CanonicalRoleOpportunityEnvelope' }, examples: { default: { value: canonicalSuccessExample } } } } }, '400': { description: 'Validation failure.' } },
       },
     },
     '/api/evaluate/from-data': {
       post: {
         tags: ['evaluation'],
         summary: 'Evaluate one WR/TE role profile from TIBER-Data',
-        description:
-          'Fetches compatibility player role profiles from /api/compatibility/player-role-profiles and team opportunity context from /api/compatibility/team-opportunity-context before running the deterministic scorer.',
-        requestBody: {
-          required: true,
-          content: {
-            'application/json': {
-              schema: { $ref: '#/components/schemas/UpstreamRoleEvaluationRequest' },
-              examples: {
-                default: { value: upstreamRequestExample },
-              },
-            },
-          },
-        },
-        responses: {
-          '200': {
-            description: 'Deterministic evaluation result with upstream source metadata.',
-            content: {
-              'application/json': {
-                schema: { $ref: '#/components/schemas/RoleEvaluationOutput' },
-                examples: {
-                  default: { value: upstreamSuccessExample },
-                },
-              },
-            },
-          },
-          '400': {
-            description: 'Validation failure.',
-          },
-          '404': {
-            description: 'Upstream data was not found.',
-          },
-          '409': {
-            description: 'Upstream data was ambiguous.',
-          },
-          '502': {
-            description: 'Upstream data was incomplete or unavailable.',
-          },
-        },
+        requestBody: { required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/UpstreamRoleEvaluationRequest' }, examples: { default: { value: upstreamRequestExample } } } } },
+        responses: { '200': { description: 'Internal deterministic evaluation result.', content: { 'application/json': { schema: { $ref: '#/components/schemas/RoleEvaluationOutput' } } } }, '400': { description: 'Validation failure.' }, '404': { description: 'Upstream data was not found.' }, '409': { description: 'Upstream data was ambiguous.' }, '502': { description: 'Upstream data was incomplete or unavailable.' } },
+      },
+    },
+    '/api/role-opportunity/from-data': {
+      post: {
+        tags: ['canonical'],
+        summary: 'Fetch TIBER-Data inputs, evaluate, and emit canonical role-opportunity output',
+        requestBody: { required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/UpstreamRoleEvaluationRequest' }, examples: { default: { value: upstreamRequestExample } } } } },
+        responses: { '200': { description: 'Canonical role-opportunity envelope.', content: { 'application/json': { schema: { $ref: '#/components/schemas/CanonicalRoleOpportunityEnvelope' } } } }, '400': { description: 'Validation failure or missing canonical scope fields.' }, '404': { description: 'Upstream data was not found.' }, '409': { description: 'Upstream data was ambiguous.' }, '502': { description: 'Upstream data was incomplete or unavailable.' } },
       },
     },
     '/api/evaluate/batch': {
       post: {
         tags: ['evaluation'],
         summary: 'Evaluate a batch of WR/TE role profiles',
-        description:
-          'Accepts either the legacy raw array form (strict by default) or an envelope with items and options.strict=false for partial-success mode.',
-        requestBody: {
-          required: true,
-          content: {
-            'application/json': {
-              schema: {
-                oneOf: [
-                  {
-                    type: 'array',
-                    minItems: 1,
-                    items: { $ref: '#/components/schemas/RoleEvaluationRequest' },
-                  },
-                  { $ref: '#/components/schemas/BatchRequestEnvelope' },
-                ],
-              },
-            },
-          },
-        },
-        responses: {
-          '200': {
-            description: 'Strict success or partial-success batch result.',
-            content: {
-              'application/json': {
-                examples: {
-                  partialSuccess: { value: partialBatchResponseExample },
-                },
-              },
-            },
-          },
-          '400': {
-            description: 'Strict-mode validation failure.',
-          },
-        },
+        requestBody: { required: true, content: { 'application/json': { schema: { oneOf: [{ type: 'array', minItems: 1, items: { $ref: '#/components/schemas/RoleEvaluationRequest' } }, { $ref: '#/components/schemas/BatchRequestEnvelope' }] } } } },
+        responses: { '200': { description: 'Strict success or partial-success batch result.', content: { 'application/json': { examples: { partialSuccess: { value: partialBatchResponseExample } } } } }, '400': { description: 'Strict-mode validation failure.' } },
       },
     },
-  },
-  'x-serviceMeta': {
-    ...buildMeta(),
-    service: SERVICE_NAME,
   },
 });
