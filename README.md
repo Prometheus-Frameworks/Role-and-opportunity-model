@@ -191,6 +191,18 @@ Fetches compatibility inputs from TIBER-Data, runs the deterministic scorer, and
 
 Canonical output requires `season` and `week`; the endpoint rejects requests missing those fields.
 
+
+### `GET /api/role-opportunity/lab`
+Returns a read-only promoted lab envelope from the exported artifact at `ROLE_OPPORTUNITY_EXPORTS_PATH` (default: `./data/role-opportunity/role_opportunity_lab.json`).
+
+Optional query params:
+
+- `season` (integer)
+- `week` (integer)
+
+If filters do not match rows present in the artifact scope, the endpoint still returns `200` with an empty `rows` array.
+
+
 ## Deterministic demo command
 
 ```bash
@@ -209,3 +221,34 @@ npm run dev
 ```
 
 The upstream client remains intentionally small: no auth, no caching, and no retry layer.
+
+
+## Promoted lab artifact export (artifact-first handoff)
+
+Generate the stable lab artifact for downstream TIBER-Fantasy consumption:
+
+```bash
+npm run export:role-opportunity-lab -- --season=2025 --week=4
+```
+
+Default artifact path:
+
+- `./data/role-opportunity/role_opportunity_lab.json`
+- override with `ROLE_OPPORTUNITY_EXPORTS_PATH`
+
+Example with explicit override:
+
+```bash
+ROLE_OPPORTUNITY_EXPORTS_PATH=./data/role-opportunity/role_opportunity_lab.json \
+  npm run export:role-opportunity-lab -- --season=2025 --week=4
+```
+
+The exported JSON envelope is designed for promoted-lab reads and includes:
+
+- top-level: `season`, `week`, `season_scope_marker`, `available_seasons`, `rows`, `source`
+- row-level minimum fields used by TIBER-Fantasy: `player_id`, `player_name`, `team`, `position`, `season`, `week`, `primary_role`, `role_tags`, `route_participation`, `target_share`, `air_yard_share`, `snap_share`, `usage_rate`, `confidence_score`, `confidence_tier`, `source_name`, `source_type`, `model_version`, `generated_at`, `insights`, `raw_fields`
+
+TIBER-Fantasy promoted adapter compatibility:
+
+- artifact-first: point `ROLE_OPPORTUNITY_EXPORTS_PATH` to the generated `role_opportunity_lab.json`
+- optional endpoint path is also available at `GET /api/role-opportunity/lab`
