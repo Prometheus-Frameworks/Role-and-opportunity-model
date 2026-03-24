@@ -70,13 +70,20 @@ test('exports deterministic role-opportunity lab artifact with expected envelope
   for (const key of requiredRowFields) {
     assert.ok(key in row, `missing row field ${key}`);
   }
+
+  for (const artifactRow of artifact.rows) {
+    assert.ok(
+      artifactRow.confidence_score >= 0 && artifactRow.confidence_score <= 1,
+      `confidence_score out of canonical range: ${artifactRow.confidence_score}`,
+    );
+  }
 });
 
 test('GET /api/role-opportunity/lab serves artifact and supports season/week filtering', async () => {
   const tempDir = await mkdtemp(path.join(os.tmpdir(), 'role-opportunity-lab-'));
   const outputPath = path.join(tempDir, 'role_opportunity_lab.json');
 
-  await exportRoleOpportunityLabArtifact({
+  const exported = await exportRoleOpportunityLabArtifact({
     season: 2025,
     week: 4,
     generatedAt: '2025-01-01T00:00:00.000Z',
@@ -97,5 +104,14 @@ test('GET /api/role-opportunity/lab serves artifact and supports season/week fil
     assert.equal(nonMatching.status, 200);
     assert.equal(nonMatchingBody.rows.length, 0);
     assert.equal(nonMatchingBody.season_scope_marker, 'season=2025;week=5');
+
+    const byPlayer = new Map<string, number>(
+      exported.envelope.rows.map((row) => [row.player_id, row.confidence_score]),
+    );
+
+    for (const row of matchingBody.rows as Array<{ player_id: string; confidence_score: number }>) {
+      assert.equal(row.confidence_score, byPlayer.get(row.player_id));
+      assert.ok(row.confidence_score >= 0 && row.confidence_score <= 1);
+    }
   });
 });

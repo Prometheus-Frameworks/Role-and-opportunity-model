@@ -9,6 +9,10 @@ import type { RoleOpportunityLabEnvelope, RoleOpportunityLabRow } from '../types
 
 export const DEFAULT_ROLE_OPPORTUNITY_LAB_EXPORT_PATH = './data/role-opportunity/role_opportunity_lab.json';
 export const DEFAULT_LAB_GENERATED_AT = '2025-01-01T00:00:00.000Z';
+const PERCENT_TO_DECIMAL_SCALE = 100;
+
+const normalizeConfidenceScoreForLab = (confidenceScore: number) =>
+  Number((confidenceScore / PERCENT_TO_DECIMAL_SCALE).toFixed(3));
 
 export const getRoleOpportunityLabExportPath = () =>
   process.env.ROLE_OPPORTUNITY_EXPORTS_PATH?.trim() || DEFAULT_ROLE_OPPORTUNITY_LAB_EXPORT_PATH;
@@ -40,6 +44,7 @@ export const buildRoleOpportunityLabEnvelope = (options: {
         generatedAt,
         inputWindow: `season=${options.season};week=${options.week}`,
       });
+      const normalizedConfidenceScore = normalizeConfidenceScoreForLab(canonicalInput.confidenceScore);
 
       return {
         player_id: canonicalInput.playerId,
@@ -55,7 +60,7 @@ export const buildRoleOpportunityLabEnvelope = (options: {
         air_yard_share: canonicalInput.usage.airYardShare ?? null,
         snap_share: canonicalInput.usage.snapShare ?? null,
         usage_rate: null,
-        confidence_score: canonicalInput.confidenceScore,
+        confidence_score: normalizedConfidenceScore,
         confidence_tier: confidenceScoreToTier(canonicalInput.confidenceScore),
         source_name: SERVICE_NAME,
         source_type: 'deterministic_model',
