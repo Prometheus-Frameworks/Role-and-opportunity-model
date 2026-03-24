@@ -2,6 +2,7 @@ import { SERVICE_NAME, SERVICE_VERSION, buildMeta } from './config/service.ts';
 import { getOpenApiDocument } from './contracts/openapi.ts';
 import { evaluateCanonicalRoleOpportunity, evaluateCanonicalRoleOpportunityFromData, evaluatePostedScenario, evaluatePostedScenarioBatch, evaluateScenarioFromData } from './routes/evaluateRoutes.ts';
 import { getHealthResponse, getReadinessResponse } from './routes/healthRoutes.ts';
+import { getRoleOpportunityLab } from './routes/roleOpportunityLabRoutes.ts';
 import { listScenarios, getScenarioDetail } from './routes/scenarioRoutes.ts';
 
 const jsonResponse = (body: unknown, status = 200) =>
@@ -44,6 +45,7 @@ export const app = {
           'POST /api/evaluate/batch',
           'POST /api/role-opportunity',
           'POST /api/role-opportunity/from-data',
+          'GET /api/role-opportunity/lab',
         ],
         examples: [
           'docs/examples/evaluate-request.json',
@@ -93,6 +95,11 @@ export const app = {
 
     if (request.method === 'POST' && path === '/api/role-opportunity/from-data') {
       const result = await evaluateCanonicalRoleOpportunityFromData(request);
+      return jsonResponse(result.body, result.status);
+    }
+
+    if (request.method === 'GET' && path === '/api/role-opportunity/lab') {
+      const result = await getRoleOpportunityLab(request);
       return jsonResponse(result.body, result.status);
     }
 
