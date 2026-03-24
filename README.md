@@ -247,6 +247,8 @@ The exported JSON envelope is designed for promoted-lab reads and includes:
 
 - top-level: `season`, `week`, `season_scope_marker`, `available_seasons`, `rows`, `source`
 - row-level minimum fields used by TIBER-Fantasy: `player_id`, `player_name`, `team`, `position`, `season`, `week`, `primary_role`, `role_tags`, `route_participation`, `target_share`, `air_yard_share`, `snap_share`, `usage_rate`, `confidence_score`, `confidence_tier`, `source_name`, `source_type`, `model_version`, `generated_at`, `insights`, `raw_fields`
+- `confidence_score` in the promoted lab artifact and `GET /api/role-opportunity/lab` is emitted on a canonical `0.0-1.0` scale for direct TIBER-Fantasy compatibility (no post-export normalization required)
+- `confidence_tier` remains human-readable (`low`/`medium`/`high`) and is derived from the deterministic model's native confidence signal
 
 TIBER-Fantasy promoted adapter compatibility:
 
