@@ -5,6 +5,8 @@ import { confidenceScoreToTier } from '../adapters/tiberDataRoleOpportunityV1.ts
 import { buildRoleOpportunityInputFromEvaluation } from './roleOpportunityService.ts';
 import { SERVICE_NAME, SERVICE_VERSION } from '../config/service.ts';
 import { evaluateRoleProfile } from '../scoring/evaluateRoleProfile.ts';
+import { tiberDataClient } from '../upstream/tiberDataClient.ts';
+import type { UpstreamEvaluationInput } from '../upstream/tiberDataClient.ts';
 import type { RoleOpportunityLabEnvelope, RoleOpportunityLabRow } from '../types/roleOpportunityLab.ts';
 
 export const DEFAULT_ROLE_OPPORTUNITY_LAB_EXPORT_PATH = './data/role-opportunity/role_opportunity_lab.json';
@@ -102,6 +104,110 @@ export const buildRoleOpportunityLabEnvelope = (options: {
   };
 };
 
+/**
+ * Build a single lab row from an upstream evaluation input (real TIBER-Data source).
+ */
+const buildLabRowFromUpstreamInput = (
+  upstreamInput: UpstreamEvaluationInput,
+  options: { season: number; week: number; generatedAt: string },
+): RoleOpportunityLabRow => {
+  const { profile, context } = upstreamInput;
+  const { season, week, generatedAt } = options;
+
+  const evaluation = evaluateRoleProfile(upstreamInput, { explanationLevel: 'standard' });
+  const canonicalInput = buildRoleOpportunityInputFromEvaluation(evaluation, {
+    season,
+    week,
+    generatedAt,
+    inputWindow: `season=${season};week=${week}`,
+  });
+  const normalizedConfidenceScore = normalizeConfidenceScoreForLab(canonicalInput.confidenceScore);
+
+  return {
+    player_id: canonicalInput.playerId,
+    player_name: canonicalInput.playerName,
+    team: canonicalInput.team,
+    position: canonicalInput.position,
+    season: canonicalInput.season,
+    week: canonicalInput.week,
+    primary_role: canonicalInput.primaryRole,
+    role_tags: canonicalInput.roleTags,
+    route_participation: canonicalInput.usage.routeParticipation ?? null,
+    target_share: canonicalInput.usage.targetShare ?? null,
+    air_yard_share: canonicalInput.usage.airYardShare ?? null,
+    snap_share: canonicalInput.usage.snapShare ?? null,
+    usage_rate: null,
+    confidence_score: normalizedConfidenceScore,
+    confidence_tier: confidenceScoreToTier(canonicalInput.confidenceScore),
+    source_name: SERVICE_NAME,
+    source_type: 'deterministic_model',
+    model_version: SERVICE_VERSION,
+    generated_at: generatedAt,
+    insights: [evaluation.primaryReason, evaluation.riskNote, ...evaluation.explanationBullets]
+      .filter((insight): insight is string => typeof insight === 'string' && insight.length > 0)
+      .slice(0, 5),
+    raw_fields: {
+      upstream_source: 'tiber_data_compatibility',
+      profile,
+      context,
+      evaluation: {
+        role_archetype: evaluation.roleArchetype,
+        scores: evaluation.scores,
+        verdict: evaluation.verdict,
+        flags: evaluation.flags,
+      },
+    },
+  };
+};
+
+/**
+ * Build the promoted lab envelope from real upstream TIBER-Data compatibility inputs.
+ * This is the primary path for production lab handoff to TIBER-Fantasy.
+ */
+export const buildRoleOpportunityLabEnvelopeFromUpstream = async (options: {
+  season: number;
+  week: number;
+  generatedAt?: string;
+  artifactPath?: string;
+}): Promise<RoleOpportunityLabEnvelope> => {
+  const generatedAt = options.generatedAt ?? new Date().toISOString();
+  const artifactPath = options.artifactPath ?? getRoleOpportunityLabExportPath();
+
+  // Fetch all eligible WR/TE evaluation inputs from TIBER-Data
+  const upstreamInputs = await tiberDataClient.getAllEvaluationInputs(options.season, options.week);
+
+  const rows = stableSortRows(
+    upstreamInputs.map((input) =>
+      buildLabRowFromUpstreamInput(input, {
+        season: options.season,
+        week: options.week,
+        generatedAt,
+      }),
+    ),
+  );
+
+  return {
+    season: options.season,
+    week: options.week,
+    season_scope_marker: `season=${options.season};week=${options.week}`,
+    available_seasons: [options.season],
+    rows,
+    source: {
+      name: SERVICE_NAME,
+      type: 'upstream_export',
+      model_version: SERVICE_VERSION,
+      generated_at: generatedAt,
+      artifact_path: artifactPath,
+      deterministic: true,
+      upstream_scope: {
+        season: options.season,
+        week: options.week,
+        player_count: upstreamInputs.length,
+      },
+    },
+  };
+};
+
 export const exportRoleOpportunityLabArtifact = async (options: {
   season: number;
   week: number;
@@ -111,6 +217,35 @@ export const exportRoleOpportunityLabArtifact = async (options: {
   const outputPath = options.outputPath ?? getRoleOpportunityLabExportPath();
   const resolvedOutputPath = path.resolve(outputPath);
   const envelope = buildRoleOpportunityLabEnvelope({
+    season: options.season,
+    week: options.week,
+    generatedAt: options.generatedAt,
+    artifactPath: outputPath,
+  });
+
+  await mkdir(path.dirname(resolvedOutputPath), { recursive: true });
+  await writeFile(resolvedOutputPath, `${JSON.stringify(envelope, null, 2)}\n`, 'utf-8');
+
+  return {
+    outputPath,
+    resolvedOutputPath,
+    envelope,
+  };
+};
+
+/**
+ * Export the promoted lab artifact from real upstream TIBER-Data compatibility inputs.
+ * This is the primary production path for TIBER-Fantasy lab handoff.
+ */
+export const exportRoleOpportunityLabArtifactFromUpstream = async (options: {
+  season: number;
+  week: number;
+  generatedAt?: string;
+  outputPath?: string;
+}) => {
+  const outputPath = options.outputPath ?? getRoleOpportunityLabExportPath();
+  const resolvedOutputPath = path.resolve(outputPath);
+  const envelope = await buildRoleOpportunityLabEnvelopeFromUpstream({
     season: options.season,
     week: options.week,
     generatedAt: options.generatedAt,
