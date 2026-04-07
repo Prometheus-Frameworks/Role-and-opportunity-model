@@ -225,11 +225,30 @@ The upstream client remains intentionally small: no auth, no caching, and no ret
 
 ## Promoted lab artifact export (artifact-first handoff)
 
-Generate the stable lab artifact for downstream TIBER-Fantasy consumption:
+The lab export supports two data source modes:
+
+- **`--source=upstream`** (default): Fetches real WR/TE compatibility inputs from upstream TIBER-Data for the specified season/week. This is the **production path** for TIBER-Fantasy integration.
+- **`--source=seeded`**: Uses internally-defined test scenarios. Intended for development and local testing only.
+
+### Production export (upstream TIBER-Data)
 
 ```bash
+# Ensure TIBER-Data is running and reachable
+export TIBER_DATA_BASE_URL=http://localhost:3001
+
+# Export real data for a specific season/week
 npm run export:role-opportunity-lab -- --season=2025 --week=4
 ```
+
+This fetches all eligible WR/TE player role profiles and team opportunity contexts from TIBER-Data, evaluates each player, and writes the promoted lab artifact.
+
+### Development export (seeded scenarios)
+
+```bash
+npm run export:role-opportunity-lab -- --source=seeded --season=2025 --week=4
+```
+
+### Artifact output
 
 Default artifact path:
 
@@ -249,6 +268,29 @@ The exported JSON envelope is designed for promoted-lab reads and includes:
 - row-level minimum fields used by TIBER-Fantasy: `player_id`, `player_name`, `team`, `position`, `season`, `week`, `primary_role`, `role_tags`, `route_participation`, `target_share`, `air_yard_share`, `snap_share`, `usage_rate`, `confidence_score`, `confidence_tier`, `source_name`, `source_type`, `model_version`, `generated_at`, `insights`, `raw_fields`
 - `confidence_score` in the promoted lab artifact and `GET /api/role-opportunity/lab` is emitted on a canonical `0.0-1.0` scale for direct TIBER-Fantasy compatibility (no post-export normalization required)
 - `confidence_tier` remains human-readable (`low`/`medium`/`high`) and is derived from the deterministic model's native confidence signal
+- `source.type` indicates export origin: `upstream_export` for real TIBER-Data sources, `deterministic_export` for seeded scenarios
+
+### Source metadata
+
+The `source` block includes `upstream_scope` when using `--source=upstream`:
+
+```json
+{
+  "source": {
+    "name": "role-and-opportunity-model",
+    "type": "upstream_export",
+    "model_version": "0.1.0",
+    "generated_at": "2026-04-07T10:00:00.000Z",
+    "artifact_path": "./data/role-opportunity/role_opportunity_lab.json",
+    "deterministic": true,
+    "upstream_scope": {
+      "season": 2025,
+      "week": 4,
+      "player_count": 42
+    }
+  }
+}
+```
 
 TIBER-Fantasy promoted adapter compatibility:
 

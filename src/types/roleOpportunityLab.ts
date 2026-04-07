@@ -30,10 +30,15 @@ export interface RoleOpportunityLabEnvelope {
   rows: RoleOpportunityLabRow[];
   source: {
     name: string;
-    type: 'deterministic_export';
+    type: 'deterministic_export' | 'upstream_export';
     model_version: string;
     generated_at: string;
     artifact_path: string;
     deterministic: true;
+    upstream_scope?: {
+      season: number;
+      week: number;
+      player_count: number;
+    };
   };
 }

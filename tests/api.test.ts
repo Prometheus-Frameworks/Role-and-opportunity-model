@@ -201,13 +201,12 @@ test('POST /api/role-opportunity/from-data fetches TIBER-Data inputs and returns
   await withMockTiberFetch((url) => {
     if (url.pathname === '/api/compatibility/player-role-profiles') {
       return Response.json({
-        dataset: 'player_role_profile_compatibility',
-        count: 1,
         data: [
           {
             player_id: 'wr-test-001',
             player_name: 'Test Player',
             position: 'WR',
+            team_id: 'TM-TST',
             target_share: 26,
             air_yard_share: 31,
             route_participation: 88,
@@ -229,8 +228,6 @@ test('POST /api/role-opportunity/from-data fetches TIBER-Data inputs and returns
 
     if (url.pathname === '/api/compatibility/team-opportunity-context') {
       return Response.json({
-        dataset: 'team_opportunity_context_compatibility',
-        count: 1,
         data: [
           {
             team_id: 'TM-TST',
