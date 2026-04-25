@@ -1,0 +1,519 @@
+{
+  "model": "role-to-fantasy-baselines-v0",
+  "season": 2026,
+  "source_status": "operator_seeded",
+  "roles": [
+    {
+      "role": "QB_starter",
+      "role_family": "quarterback",
+      "role_description": "Primary starting QB role with full-game dropback and scoring responsibility.",
+      "expected_touch_range": {
+        "low": null,
+        "high": null
+      },
+      "expected_target_range": {
+        "low": null,
+        "high": null
+      },
+      "expected_route_participation_range": {
+        "low": null,
+        "high": null
+      },
+      "expected_red_zone_usage": "high",
+      "expected_ppr_ppg_range": {
+        "low": 16,
+        "high": 25
+      },
+      "volatility": "medium",
+      "positive_role_tags": [
+        "full_game_control",
+        "rushing_upside_optional"
+      ],
+      "risk_role_tags": [
+        "turnover_variance",
+        "matchup_sensitivity"
+      ],
+      "notes": "Operator-seeded v0 range; calibrate with historical role outcomes later."
+    },
+    {
+      "role": "QB_developmental",
+      "role_family": "quarterback",
+      "role_description": "Developmental QB path that may start later and mix with package usage.",
+      "expected_touch_range": {
+        "low": null,
+        "high": null
+      },
+      "expected_target_range": {
+        "low": null,
+        "high": null
+      },
+      "expected_route_participation_range": {
+        "low": null,
+        "high": null
+      },
+      "expected_red_zone_usage": "low",
+      "expected_ppr_ppg_range": {
+        "low": 6,
+        "high": 17
+      },
+      "volatility": "high",
+      "positive_role_tags": [
+        "organizational_investment",
+        "late_season_upside"
+      ],
+      "risk_role_tags": [
+        "uncertain_start_timing",
+        "limited_early_volume"
+      ],
+      "notes": "Operator-seeded v0 range; calibrate with historical role outcomes later."
+    },
+    {
+      "role": "RB1",
+      "role_family": "running_back",
+      "role_description": "Primary early-down and high-value touch RB role.",
+      "expected_touch_range": {
+        "low": 14,
+        "high": 22
+      },
+      "expected_target_range": {
+        "low": 1,
+        "high": 5
+      },
+      "expected_route_participation_range": {
+        "low": 25,
+        "high": 55
+      },
+      "expected_red_zone_usage": "medium_high",
+      "expected_ppr_ppg_range": {
+        "low": 10,
+        "high": 18
+      },
+      "volatility": "medium",
+      "positive_role_tags": [
+        "high_touch_ceiling",
+        "red_zone_access"
+      ],
+      "risk_role_tags": [
+        "game_script_sensitivity",
+        "offensive_line_dependency"
+      ],
+      "notes": "Operator-seeded v0 range; calibrate with historical role outcomes later."
+    },
+    {
+      "role": "RB2_change_of_pace",
+      "role_family": "running_back",
+      "role_description": "Secondary change-of-pace RB role with explosive but inconsistent touch volume.",
+      "expected_touch_range": {
+        "low": 6,
+        "high": 12
+      },
+      "expected_target_range": {
+        "low": 1,
+        "high": 4
+      },
+      "expected_route_participation_range": {
+        "low": 20,
+        "high": 45
+      },
+      "expected_red_zone_usage": "low",
+      "expected_ppr_ppg_range": {
+        "low": 5,
+        "high": 11
+      },
+      "volatility": "medium_high",
+      "positive_role_tags": [
+        "efficiency_spike_potential",
+        "contingent_upside"
+      ],
+      "risk_role_tags": [
+        "workload_fragility",
+        "td_dependency"
+      ],
+      "notes": "Operator-seeded v0 range; calibrate with historical role outcomes later."
+    },
+    {
+      "role": "passing_down_rb",
+      "role_family": "running_back",
+      "role_description": "Passing-down specialist RB role focused on targets and two-minute situations.",
+      "expected_touch_range": {
+        "low": 4,
+        "high": 9
+      },
+      "expected_target_range": {
+        "low": 3,
+        "high": 7
+      },
+      "expected_route_participation_range": {
+        "low": 35,
+        "high": 70
+      },
+      "expected_red_zone_usage": "low",
+      "expected_ppr_ppg_range": {
+        "low": 6,
+        "high": 13
+      },
+      "volatility": "medium_high",
+      "positive_role_tags": [
+        "ppr_friendly_usage",
+        "game_script_flexibility"
+      ],
+      "risk_role_tags": [
+        "low_rush_floor",
+        "role_substitution_risk"
+      ],
+      "notes": "Operator-seeded v0 range; calibrate with historical role outcomes later."
+    },
+    {
+      "role": "injury_contingent_rb",
+      "role_family": "running_back",
+      "role_description": "Reserve RB role that can jump to high volume if starter misses time.",
+      "expected_touch_range": {
+        "low": 2,
+        "high": 16
+      },
+      "expected_target_range": {
+        "low": 0,
+        "high": 4
+      },
+      "expected_route_participation_range": {
+        "low": 10,
+        "high": 55
+      },
+      "expected_red_zone_usage": "low",
+      "expected_ppr_ppg_range": {
+        "low": 2,
+        "high": 15
+      },
+      "volatility": "high",
+      "positive_role_tags": [
+        "contingent_workhorse_path",
+        "bench_stash_value"
+      ],
+      "risk_role_tags": [
+        "inactive_weeks_possible",
+        "uncertain_standalone_role"
+      ],
+      "notes": "Operator-seeded v0 range; calibrate with historical role outcomes later."
+    },
+    {
+      "role": "WR1",
+      "role_family": "wide_receiver",
+      "role_description": "Primary perimeter WR role with top target share and first-read usage.",
+      "expected_touch_range": {
+        "low": 0,
+        "high": 2
+      },
+      "expected_target_range": {
+        "low": 7,
+        "high": 12
+      },
+      "expected_route_participation_range": {
+        "low": 75,
+        "high": 95
+      },
+      "expected_red_zone_usage": "high",
+      "expected_ppr_ppg_range": {
+        "low": 14,
+        "high": 23
+      },
+      "volatility": "medium",
+      "positive_role_tags": [
+        "alpha_target_share",
+        "high_weekly_ceiling"
+      ],
+      "risk_role_tags": [
+        "coverage_attention",
+        "qb_dependency"
+      ],
+      "notes": "Operator-seeded v0 range; calibrate with historical role outcomes later."
+    },
+    {
+      "role": "WR2",
+      "role_family": "wide_receiver",
+      "role_description": "Secondary starting WR role in projected pass environment.",
+      "expected_touch_range": {
+        "low": 0,
+        "high": 2
+      },
+      "expected_target_range": {
+        "low": 5,
+        "high": 9
+      },
+      "expected_route_participation_range": {
+        "low": 70,
+        "high": 92
+      },
+      "expected_red_zone_usage": "medium",
+      "expected_ppr_ppg_range": {
+        "low": 9,
+        "high": 16
+      },
+      "volatility": "medium_high",
+      "positive_role_tags": [
+        "starter_route_share",
+        "spike_week_potential"
+      ],
+      "risk_role_tags": [
+        "target_competition",
+        "game_plan_variance"
+      ],
+      "notes": "Operator-seeded v0 range; calibrate with historical role outcomes later."
+    },
+    {
+      "role": "WR3",
+      "role_family": "wide_receiver",
+      "role_description": "Tertiary WR role with situational starter value in 11 personnel.",
+      "expected_touch_range": {
+        "low": 0,
+        "high": 1
+      },
+      "expected_target_range": {
+        "low": 3,
+        "high": 7
+      },
+      "expected_route_participation_range": {
+        "low": 55,
+        "high": 85
+      },
+      "expected_red_zone_usage": "low",
+      "expected_ppr_ppg_range": {
+        "low": 6,
+        "high": 12
+      },
+      "volatility": "high",
+      "positive_role_tags": [
+        "three_wr_set_access",
+        "injury_bump_path"
+      ],
+      "risk_role_tags": [
+        "weekly_floor_instability",
+        "package_dependency"
+      ],
+      "notes": "Operator-seeded v0 range; calibrate with historical role outcomes later."
+    },
+    {
+      "role": "slot_wr",
+      "role_family": "wide_receiver",
+      "role_description": "Primary slot WR role with high route participation and short-area target profile.",
+      "expected_touch_range": {
+        "low": 0,
+        "high": 2
+      },
+      "expected_target_range": {
+        "low": 5,
+        "high": 10
+      },
+      "expected_route_participation_range": {
+        "low": 65,
+        "high": 90
+      },
+      "expected_red_zone_usage": "medium",
+      "expected_ppr_ppg_range": {
+        "low": 8,
+        "high": 15
+      },
+      "volatility": "medium",
+      "positive_role_tags": [
+        "high_completion_role",
+        "ppr_stability_path"
+      ],
+      "risk_role_tags": [
+        "aDOT_cap",
+        "coverage_adjustment_risk"
+      ],
+      "notes": "Operator-seeded v0 range; calibrate with historical role outcomes later."
+    },
+    {
+      "role": "field_stretcher_wr",
+      "role_family": "wide_receiver",
+      "role_description": "Vertical field-stretching WR role dependent on deep targets and efficiency.",
+      "expected_touch_range": {
+        "low": 0,
+        "high": 1
+      },
+      "expected_target_range": {
+        "low": 3,
+        "high": 6
+      },
+      "expected_route_participation_range": {
+        "low": 45,
+        "high": 80
+      },
+      "expected_red_zone_usage": "low",
+      "expected_ppr_ppg_range": {
+        "low": 5,
+        "high": 13
+      },
+      "volatility": "high",
+      "positive_role_tags": [
+        "big_play_leverage",
+        "low_roster_cost"
+      ],
+      "risk_role_tags": [
+        "low_target_density",
+        "boom_bust_profile"
+      ],
+      "notes": "Operator-seeded v0 range; calibrate with historical role outcomes later."
+    },
+    {
+      "role": "rotational_wr",
+      "role_family": "wide_receiver",
+      "role_description": "Rotational WR role with package-based routes and inconsistent volume.",
+      "expected_touch_range": {
+        "low": 0,
+        "high": 1
+      },
+      "expected_target_range": {
+        "low": 1,
+        "high": 5
+      },
+      "expected_route_participation_range": {
+        "low": 25,
+        "high": 60
+      },
+      "expected_red_zone_usage": "low",
+      "expected_ppr_ppg_range": {
+        "low": 2,
+        "high": 9
+      },
+      "volatility": "high",
+      "positive_role_tags": [
+        "specialized_usage",
+        "injury_upside_path"
+      ],
+      "risk_role_tags": [
+        "low_weekly_floor",
+        "snap_share_instability"
+      ],
+      "notes": "Operator-seeded v0 range; calibrate with historical role outcomes later."
+    },
+    {
+      "role": "TE1",
+      "role_family": "tight_end",
+      "role_description": "Primary all-situations TE role with stable routes and red-zone access.",
+      "expected_touch_range": {
+        "low": 0,
+        "high": 1
+      },
+      "expected_target_range": {
+        "low": 4,
+        "high": 8
+      },
+      "expected_route_participation_range": {
+        "low": 60,
+        "high": 85
+      },
+      "expected_red_zone_usage": "medium_high",
+      "expected_ppr_ppg_range": {
+        "low": 8,
+        "high": 15
+      },
+      "volatility": "medium",
+      "positive_role_tags": [
+        "positional_advantage_path",
+        "end_zone_usage"
+      ],
+      "risk_role_tags": [
+        "blocking_assignment_shifts",
+        "target_competition"
+      ],
+      "notes": "Operator-seeded v0 range; calibrate with historical role outcomes later."
+    },
+    {
+      "role": "TE2",
+      "role_family": "tight_end",
+      "role_description": "Secondary TE role with occasional routes and package-specific deployment.",
+      "expected_touch_range": {
+        "low": 0,
+        "high": 1
+      },
+      "expected_target_range": {
+        "low": 1,
+        "high": 4
+      },
+      "expected_route_participation_range": {
+        "low": 25,
+        "high": 55
+      },
+      "expected_red_zone_usage": "low",
+      "expected_ppr_ppg_range": {
+        "low": 2,
+        "high": 8
+      },
+      "volatility": "high",
+      "positive_role_tags": [
+        "multi_te_personnel_access",
+        "injury_contingency"
+      ],
+      "risk_role_tags": [
+        "limited_route_share",
+        "touchdown_dependency"
+      ],
+      "notes": "Operator-seeded v0 range; calibrate with historical role outcomes later."
+    },
+    {
+      "role": "move_te",
+      "role_family": "tight_end",
+      "role_description": "Move TE role aligned off-line to create matchup value and target spikes.",
+      "expected_touch_range": {
+        "low": 0,
+        "high": 1
+      },
+      "expected_target_range": {
+        "low": 3,
+        "high": 7
+      },
+      "expected_route_participation_range": {
+        "low": 50,
+        "high": 80
+      },
+      "expected_red_zone_usage": "medium",
+      "expected_ppr_ppg_range": {
+        "low": 6,
+        "high": 13
+      },
+      "volatility": "medium_high",
+      "positive_role_tags": [
+        "matchup_creation",
+        "explosive_yac_path"
+      ],
+      "risk_role_tags": [
+        "usage_gameplan_variance",
+        "formation_dependency"
+      ],
+      "notes": "Operator-seeded v0 range; calibrate with historical role outcomes later."
+    },
+    {
+      "role": "blocking_rotational_te",
+      "role_family": "tight_end",
+      "role_description": "Blocking-first rotational TE role with limited route participation.",
+      "expected_touch_range": {
+        "low": 0,
+        "high": 1
+      },
+      "expected_target_range": {
+        "low": 0,
+        "high": 2
+      },
+      "expected_route_participation_range": {
+        "low": 10,
+        "high": 35
+      },
+      "expected_red_zone_usage": "unknown",
+      "expected_ppr_ppg_range": {
+        "low": 0,
+        "high": 5
+      },
+      "volatility": "high",
+      "positive_role_tags": [
+        "snap_pathway",
+        "formation_value"
+      ],
+      "risk_role_tags": [
+        "limited_fantasy_translation",
+        "route_volume_cap"
+      ],
+      "notes": "Operator-seeded v0 range; calibrate with historical role outcomes later."
+    }
+  ]
+}
