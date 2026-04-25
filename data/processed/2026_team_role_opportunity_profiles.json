@@ -1,0 +1,1402 @@
+{
+  "model": "team-role-opportunity-profiles-v0",
+  "season": 2026,
+  "source_status": "operator_seeded",
+  "team_profiles": [
+    {
+      "season": 2026,
+      "team": "NO",
+      "team_name": "New Orleans Saints",
+      "play_caller": "operator_seeded",
+      "head_coach": "operator_seeded",
+      "source_status": "operator_seeded",
+      "roles": [
+        {
+          "role": "WR2",
+          "role_family": "wide_receiver",
+          "role_description": "Secondary starting WR role in projected pass environment.",
+          "expected_volume_range": {
+            "targets_low": null,
+            "targets_high": null,
+            "touches_low": null,
+            "touches_high": null,
+            "routes_low": null,
+            "routes_high": null
+          },
+          "expected_red_zone_usage": "unknown",
+          "expected_ppr_ppg_range": {
+            "low": null,
+            "high": null
+          },
+          "role_stability": "medium",
+          "positive_role_tags": [
+            "pace_boost_candidate",
+            "pass_environment_upside"
+          ],
+          "risk_role_tags": [
+            "qb_context_uncertainty",
+            "scheme_transition_variance"
+          ],
+          "notes": "Operator-seeded inspect-only v0 role profile."
+        },
+        {
+          "role": "slot_wr",
+          "role_family": "wide_receiver",
+          "role_description": "Primary slot WR role with underneath target concentration.",
+          "expected_volume_range": {
+            "targets_low": null,
+            "targets_high": null,
+            "touches_low": null,
+            "touches_high": null,
+            "routes_low": null,
+            "routes_high": null
+          },
+          "expected_red_zone_usage": "unknown",
+          "expected_ppr_ppg_range": {
+            "low": null,
+            "high": null
+          },
+          "role_stability": "medium",
+          "positive_role_tags": [
+            "pace_boost_candidate",
+            "pass_environment_upside"
+          ],
+          "risk_role_tags": [
+            "qb_context_uncertainty",
+            "scheme_transition_variance"
+          ],
+          "notes": "Operator-seeded inspect-only v0 role profile."
+        },
+        {
+          "role": "TE1",
+          "role_family": "tight_end",
+          "role_description": "Primary TE role with strong route and red-zone access.",
+          "expected_volume_range": {
+            "targets_low": null,
+            "targets_high": null,
+            "touches_low": null,
+            "touches_high": null,
+            "routes_low": null,
+            "routes_high": null
+          },
+          "expected_red_zone_usage": "unknown",
+          "expected_ppr_ppg_range": {
+            "low": null,
+            "high": null
+          },
+          "role_stability": "medium",
+          "positive_role_tags": [
+            "pace_boost_candidate",
+            "pass_environment_upside"
+          ],
+          "risk_role_tags": [
+            "qb_context_uncertainty",
+            "scheme_transition_variance"
+          ],
+          "notes": "Operator-seeded inspect-only v0 role profile."
+        }
+      ]
+    },
+    {
+      "season": 2026,
+      "team": "HOU",
+      "team_name": "Houston Texans",
+      "play_caller": "operator_seeded",
+      "head_coach": "operator_seeded",
+      "source_status": "operator_seeded",
+      "roles": [
+        {
+          "role": "RB1",
+          "role_family": "running_back",
+          "role_description": "Primary early-down and high-value touch RB role.",
+          "expected_volume_range": {
+            "targets_low": null,
+            "targets_high": null,
+            "touches_low": null,
+            "touches_high": null,
+            "routes_low": null,
+            "routes_high": null
+          },
+          "expected_red_zone_usage": "unknown",
+          "expected_ppr_ppg_range": {
+            "low": null,
+            "high": null
+          },
+          "role_stability": "medium",
+          "positive_role_tags": [
+            "lead_rb_volume_watch",
+            "improved_offense_watch"
+          ],
+          "risk_role_tags": [
+            "offensive_line_dependency",
+            "play_caller_transfer_uncertainty"
+          ],
+          "notes": "Operator-seeded inspect-only v0 role profile."
+        },
+        {
+          "role": "WR2",
+          "role_family": "wide_receiver",
+          "role_description": "Secondary starting WR role in projected pass environment.",
+          "expected_volume_range": {
+            "targets_low": null,
+            "targets_high": null,
+            "touches_low": null,
+            "touches_high": null,
+            "routes_low": null,
+            "routes_high": null
+          },
+          "expected_red_zone_usage": "unknown",
+          "expected_ppr_ppg_range": {
+            "low": null,
+            "high": null
+          },
+          "role_stability": "medium",
+          "positive_role_tags": [
+            "lead_rb_volume_watch",
+            "improved_offense_watch"
+          ],
+          "risk_role_tags": [
+            "offensive_line_dependency",
+            "play_caller_transfer_uncertainty"
+          ],
+          "notes": "Operator-seeded inspect-only v0 role profile."
+        },
+        {
+          "role": "TE1",
+          "role_family": "tight_end",
+          "role_description": "Primary TE role with strong route and red-zone access.",
+          "expected_volume_range": {
+            "targets_low": null,
+            "targets_high": null,
+            "touches_low": null,
+            "touches_high": null,
+            "routes_low": null,
+            "routes_high": null
+          },
+          "expected_red_zone_usage": "unknown",
+          "expected_ppr_ppg_range": {
+            "low": null,
+            "high": null
+          },
+          "role_stability": "medium",
+          "positive_role_tags": [
+            "lead_rb_volume_watch",
+            "improved_offense_watch"
+          ],
+          "risk_role_tags": [
+            "offensive_line_dependency",
+            "play_caller_transfer_uncertainty"
+          ],
+          "notes": "Operator-seeded inspect-only v0 role profile."
+        }
+      ]
+    },
+    {
+      "season": 2026,
+      "team": "TEN",
+      "team_name": "Tennessee Titans",
+      "play_caller": "operator_seeded",
+      "head_coach": "operator_seeded",
+      "source_status": "operator_seeded",
+      "roles": [
+        {
+          "role": "RB1",
+          "role_family": "running_back",
+          "role_description": "Primary early-down and high-value touch RB role.",
+          "expected_volume_range": {
+            "targets_low": null,
+            "targets_high": null,
+            "touches_low": null,
+            "touches_high": null,
+            "routes_low": null,
+            "routes_high": null
+          },
+          "expected_red_zone_usage": "unknown",
+          "expected_ppr_ppg_range": {
+            "low": null,
+            "high": null
+          },
+          "role_stability": "medium",
+          "positive_role_tags": [
+            "backfield_opportunity_watch",
+            "wr1_depth_chart_path"
+          ],
+          "risk_role_tags": [
+            "young_qb_development_dependency",
+            "offense_environment_uncertainty"
+          ],
+          "notes": "Operator-seeded inspect-only v0 role profile."
+        },
+        {
+          "role": "RB2_change_of_pace",
+          "role_family": "running_back",
+          "role_description": "Change-of-pace RB role with efficiency-driven production swings.",
+          "expected_volume_range": {
+            "targets_low": null,
+            "targets_high": null,
+            "touches_low": null,
+            "touches_high": null,
+            "routes_low": null,
+            "routes_high": null
+          },
+          "expected_red_zone_usage": "unknown",
+          "expected_ppr_ppg_range": {
+            "low": null,
+            "high": null
+          },
+          "role_stability": "medium",
+          "positive_role_tags": [
+            "backfield_opportunity_watch",
+            "wr1_depth_chart_path"
+          ],
+          "risk_role_tags": [
+            "young_qb_development_dependency",
+            "offense_environment_uncertainty"
+          ],
+          "notes": "Operator-seeded inspect-only v0 role profile."
+        },
+        {
+          "role": "WR1",
+          "role_family": "wide_receiver",
+          "role_description": "Primary perimeter WR role with lead target access.",
+          "expected_volume_range": {
+            "targets_low": null,
+            "targets_high": null,
+            "touches_low": null,
+            "touches_high": null,
+            "routes_low": null,
+            "routes_high": null
+          },
+          "expected_red_zone_usage": "unknown",
+          "expected_ppr_ppg_range": {
+            "low": null,
+            "high": null
+          },
+          "role_stability": "medium",
+          "positive_role_tags": [
+            "backfield_opportunity_watch",
+            "wr1_depth_chart_path"
+          ],
+          "risk_role_tags": [
+            "young_qb_development_dependency",
+            "offense_environment_uncertainty"
+          ],
+          "notes": "Operator-seeded inspect-only v0 role profile."
+        }
+      ]
+    },
+    {
+      "season": 2026,
+      "team": "WAS",
+      "team_name": "Washington Commanders",
+      "play_caller": "operator_seeded",
+      "head_coach": "operator_seeded",
+      "source_status": "operator_seeded",
+      "roles": [
+        {
+          "role": "slot_wr",
+          "role_family": "wide_receiver",
+          "role_description": "Primary slot WR role with underneath target concentration.",
+          "expected_volume_range": {
+            "targets_low": null,
+            "targets_high": null,
+            "touches_low": null,
+            "touches_high": null,
+            "routes_low": null,
+            "routes_high": null
+          },
+          "expected_red_zone_usage": "unknown",
+          "expected_ppr_ppg_range": {
+            "low": null,
+            "high": null
+          },
+          "role_stability": "medium",
+          "positive_role_tags": [
+            "jayden_daniels_environment",
+            "high_upside_offense",
+            "available_target_opportunity"
+          ],
+          "risk_role_tags": [
+            "role_projection_uncertainty"
+          ],
+          "notes": "Operator-seeded inspect-only v0 role profile."
+        },
+        {
+          "role": "WR2",
+          "role_family": "wide_receiver",
+          "role_description": "Secondary starting WR role in projected pass environment.",
+          "expected_volume_range": {
+            "targets_low": null,
+            "targets_high": null,
+            "touches_low": null,
+            "touches_high": null,
+            "routes_low": null,
+            "routes_high": null
+          },
+          "expected_red_zone_usage": "unknown",
+          "expected_ppr_ppg_range": {
+            "low": null,
+            "high": null
+          },
+          "role_stability": "medium",
+          "positive_role_tags": [
+            "jayden_daniels_environment",
+            "high_upside_offense",
+            "available_target_opportunity"
+          ],
+          "risk_role_tags": [
+            "role_projection_uncertainty"
+          ],
+          "notes": "Operator-seeded inspect-only v0 role profile."
+        },
+        {
+          "role": "passing_down_rb",
+          "role_family": "running_back",
+          "role_description": "Passing-down RB role with target-driven PPR translation.",
+          "expected_volume_range": {
+            "targets_low": null,
+            "targets_high": null,
+            "touches_low": null,
+            "touches_high": null,
+            "routes_low": null,
+            "routes_high": null
+          },
+          "expected_red_zone_usage": "unknown",
+          "expected_ppr_ppg_range": {
+            "low": null,
+            "high": null
+          },
+          "role_stability": "medium",
+          "positive_role_tags": [
+            "jayden_daniels_environment",
+            "high_upside_offense",
+            "available_target_opportunity"
+          ],
+          "risk_role_tags": [
+            "role_projection_uncertainty"
+          ],
+          "notes": "Operator-seeded inspect-only v0 role profile."
+        }
+      ]
+    },
+    {
+      "season": 2026,
+      "team": "LAR",
+      "team_name": "Los Angeles Rams",
+      "play_caller": "operator_seeded",
+      "head_coach": "operator_seeded",
+      "source_status": "operator_seeded",
+      "roles": [
+        {
+          "role": "WR1",
+          "role_family": "wide_receiver",
+          "role_description": "Primary perimeter WR role with lead target access.",
+          "expected_volume_range": {
+            "targets_low": null,
+            "targets_high": null,
+            "touches_low": null,
+            "touches_high": null,
+            "routes_low": null,
+            "routes_high": null
+          },
+          "expected_red_zone_usage": "unknown",
+          "expected_ppr_ppg_range": {
+            "low": null,
+            "high": null
+          },
+          "role_stability": "medium",
+          "positive_role_tags": [
+            "mcvay_developmental_environment",
+            "efficient_passing_environment",
+            "heavy_personnel_role_watch"
+          ],
+          "risk_role_tags": [
+            "veteran_depth_chart_block",
+            "role_specific_usage_dependency"
+          ],
+          "notes": "Operator-seeded inspect-only v0 role profile."
+        },
+        {
+          "role": "WR2",
+          "role_family": "wide_receiver",
+          "role_description": "Secondary starting WR role in projected pass environment.",
+          "expected_volume_range": {
+            "targets_low": null,
+            "targets_high": null,
+            "touches_low": null,
+            "touches_high": null,
+            "routes_low": null,
+            "routes_high": null
+          },
+          "expected_red_zone_usage": "unknown",
+          "expected_ppr_ppg_range": {
+            "low": null,
+            "high": null
+          },
+          "role_stability": "medium",
+          "positive_role_tags": [
+            "mcvay_developmental_environment",
+            "efficient_passing_environment",
+            "heavy_personnel_role_watch"
+          ],
+          "risk_role_tags": [
+            "veteran_depth_chart_block",
+            "role_specific_usage_dependency"
+          ],
+          "notes": "Operator-seeded inspect-only v0 role profile."
+        },
+        {
+          "role": "TE1",
+          "role_family": "tight_end",
+          "role_description": "Primary TE role with strong route and red-zone access.",
+          "expected_volume_range": {
+            "targets_low": null,
+            "targets_high": null,
+            "touches_low": null,
+            "touches_high": null,
+            "routes_low": null,
+            "routes_high": null
+          },
+          "expected_red_zone_usage": "unknown",
+          "expected_ppr_ppg_range": {
+            "low": null,
+            "high": null
+          },
+          "role_stability": "medium",
+          "positive_role_tags": [
+            "mcvay_developmental_environment",
+            "efficient_passing_environment",
+            "heavy_personnel_role_watch"
+          ],
+          "risk_role_tags": [
+            "veteran_depth_chart_block",
+            "role_specific_usage_dependency"
+          ],
+          "notes": "Operator-seeded inspect-only v0 role profile."
+        },
+        {
+          "role": "move_te",
+          "role_family": "tight_end",
+          "role_description": "Move TE role that creates matchup opportunities from detached alignments.",
+          "expected_volume_range": {
+            "targets_low": null,
+            "targets_high": null,
+            "touches_low": null,
+            "touches_high": null,
+            "routes_low": null,
+            "routes_high": null
+          },
+          "expected_red_zone_usage": "unknown",
+          "expected_ppr_ppg_range": {
+            "low": null,
+            "high": null
+          },
+          "role_stability": "medium",
+          "positive_role_tags": [
+            "mcvay_developmental_environment",
+            "efficient_passing_environment",
+            "heavy_personnel_role_watch"
+          ],
+          "risk_role_tags": [
+            "veteran_depth_chart_block",
+            "role_specific_usage_dependency"
+          ],
+          "notes": "Operator-seeded inspect-only v0 role profile."
+        },
+        {
+          "role": "QB_developmental",
+          "role_family": "quarterback",
+          "role_description": "Developmental QB role with uncertain near-term starts.",
+          "expected_volume_range": {
+            "targets_low": null,
+            "targets_high": null,
+            "touches_low": null,
+            "touches_high": null,
+            "routes_low": null,
+            "routes_high": null
+          },
+          "expected_red_zone_usage": "unknown",
+          "expected_ppr_ppg_range": {
+            "low": null,
+            "high": null
+          },
+          "role_stability": "medium",
+          "positive_role_tags": [
+            "mcvay_developmental_environment",
+            "efficient_passing_environment",
+            "heavy_personnel_role_watch"
+          ],
+          "risk_role_tags": [
+            "veteran_depth_chart_block",
+            "role_specific_usage_dependency"
+          ],
+          "notes": "Operator-seeded inspect-only v0 role profile."
+        }
+      ]
+    },
+    {
+      "season": 2026,
+      "team": "PHI",
+      "team_name": "Philadelphia Eagles",
+      "play_caller": "operator_seeded",
+      "head_coach": "operator_seeded",
+      "source_status": "operator_seeded",
+      "roles": [
+        {
+          "role": "WR3",
+          "role_family": "wide_receiver",
+          "role_description": "Tertiary WR role tied to 11-personnel and game-script volume.",
+          "expected_volume_range": {
+            "targets_low": null,
+            "targets_high": null,
+            "touches_low": null,
+            "touches_high": null,
+            "routes_low": null,
+            "routes_high": null
+          },
+          "expected_red_zone_usage": "unknown",
+          "expected_ppr_ppg_range": {
+            "low": null,
+            "high": null
+          },
+          "role_stability": "medium",
+          "positive_role_tags": [
+            "high_efficiency_environment"
+          ],
+          "risk_role_tags": [
+            "depth_chart_volume_cap",
+            "target_concentration_ahead"
+          ],
+          "notes": "Operator-seeded inspect-only v0 role profile."
+        },
+        {
+          "role": "TE1",
+          "role_family": "tight_end",
+          "role_description": "Primary TE role with strong route and red-zone access.",
+          "expected_volume_range": {
+            "targets_low": null,
+            "targets_high": null,
+            "touches_low": null,
+            "touches_high": null,
+            "routes_low": null,
+            "routes_high": null
+          },
+          "expected_red_zone_usage": "unknown",
+          "expected_ppr_ppg_range": {
+            "low": null,
+            "high": null
+          },
+          "role_stability": "medium",
+          "positive_role_tags": [
+            "high_efficiency_environment"
+          ],
+          "risk_role_tags": [
+            "depth_chart_volume_cap",
+            "target_concentration_ahead"
+          ],
+          "notes": "Operator-seeded inspect-only v0 role profile."
+        }
+      ]
+    },
+    {
+      "season": 2026,
+      "team": "CLE",
+      "team_name": "Cleveland Browns",
+      "play_caller": "operator_seeded",
+      "head_coach": "operator_seeded",
+      "source_status": "operator_seeded",
+      "roles": [
+        {
+          "role": "WR1",
+          "role_family": "wide_receiver",
+          "role_description": "Primary perimeter WR role with lead target access.",
+          "expected_volume_range": {
+            "targets_low": null,
+            "targets_high": null,
+            "touches_low": null,
+            "touches_high": null,
+            "routes_low": null,
+            "routes_high": null
+          },
+          "expected_red_zone_usage": "unknown",
+          "expected_ppr_ppg_range": {
+            "low": null,
+            "high": null
+          },
+          "role_stability": "medium",
+          "positive_role_tags": [
+            "concentrated_wr_investment",
+            "rookie_wr_priority_signal"
+          ],
+          "risk_role_tags": [
+            "browns_offensive_volatility",
+            "target_competition_between_rookies",
+            "qb_environment_uncertainty"
+          ],
+          "notes": "Operator-seeded inspect-only v0 role profile."
+        },
+        {
+          "role": "WR2",
+          "role_family": "wide_receiver",
+          "role_description": "Secondary starting WR role in projected pass environment.",
+          "expected_volume_range": {
+            "targets_low": null,
+            "targets_high": null,
+            "touches_low": null,
+            "touches_high": null,
+            "routes_low": null,
+            "routes_high": null
+          },
+          "expected_red_zone_usage": "unknown",
+          "expected_ppr_ppg_range": {
+            "low": null,
+            "high": null
+          },
+          "role_stability": "medium",
+          "positive_role_tags": [
+            "concentrated_wr_investment",
+            "rookie_wr_priority_signal"
+          ],
+          "risk_role_tags": [
+            "browns_offensive_volatility",
+            "target_competition_between_rookies",
+            "qb_environment_uncertainty"
+          ],
+          "notes": "Operator-seeded inspect-only v0 role profile."
+        }
+      ]
+    },
+    {
+      "season": 2026,
+      "team": "SF",
+      "team_name": "San Francisco 49ers",
+      "play_caller": "operator_seeded",
+      "head_coach": "operator_seeded",
+      "source_status": "operator_seeded",
+      "roles": [
+        {
+          "role": "WR2",
+          "role_family": "wide_receiver",
+          "role_description": "Secondary starting WR role in projected pass environment.",
+          "expected_volume_range": {
+            "targets_low": null,
+            "targets_high": null,
+            "touches_low": null,
+            "touches_high": null,
+            "routes_low": null,
+            "routes_high": null
+          },
+          "expected_red_zone_usage": "unknown",
+          "expected_ppr_ppg_range": {
+            "low": null,
+            "high": null
+          },
+          "role_stability": "medium",
+          "positive_role_tags": [
+            "shanahan_efficiency_environment",
+            "yac_creation_scheme"
+          ],
+          "risk_role_tags": [
+            "low_pass_volume_risk",
+            "role_specific_usage_dependency",
+            "day2_49ers_skill_pick_hit_rate_caution"
+          ],
+          "notes": "Operator-seeded inspect-only v0 role profile."
+        },
+        {
+          "role": "rotational_wr",
+          "role_family": "wide_receiver",
+          "role_description": "Rotational WR role with package-specific route participation.",
+          "expected_volume_range": {
+            "targets_low": null,
+            "targets_high": null,
+            "touches_low": null,
+            "touches_high": null,
+            "routes_low": null,
+            "routes_high": null
+          },
+          "expected_red_zone_usage": "unknown",
+          "expected_ppr_ppg_range": {
+            "low": null,
+            "high": null
+          },
+          "role_stability": "medium",
+          "positive_role_tags": [
+            "shanahan_efficiency_environment",
+            "yac_creation_scheme"
+          ],
+          "risk_role_tags": [
+            "low_pass_volume_risk",
+            "role_specific_usage_dependency",
+            "day2_49ers_skill_pick_hit_rate_caution"
+          ],
+          "notes": "Operator-seeded inspect-only v0 role profile."
+        }
+      ]
+    },
+    {
+      "season": 2026,
+      "team": "SEA",
+      "team_name": "Seattle Seahawks",
+      "play_caller": "operator_seeded",
+      "head_coach": "operator_seeded",
+      "source_status": "operator_seeded",
+      "roles": [
+        {
+          "role": "RB1",
+          "role_family": "running_back",
+          "role_description": "Primary early-down and high-value touch RB role.",
+          "expected_volume_range": {
+            "targets_low": null,
+            "targets_high": null,
+            "touches_low": null,
+            "touches_high": null,
+            "routes_low": null,
+            "routes_high": null
+          },
+          "expected_red_zone_usage": "unknown",
+          "expected_ppr_ppg_range": {
+            "low": null,
+            "high": null
+          },
+          "role_stability": "medium",
+          "positive_role_tags": [
+            "round1_rb_commitment"
+          ],
+          "risk_role_tags": [
+            "shared_backfield_context",
+            "workload_projection_risk"
+          ],
+          "notes": "Operator-seeded inspect-only v0 role profile."
+        },
+        {
+          "role": "RB2_change_of_pace",
+          "role_family": "running_back",
+          "role_description": "Change-of-pace RB role with efficiency-driven production swings.",
+          "expected_volume_range": {
+            "targets_low": null,
+            "targets_high": null,
+            "touches_low": null,
+            "touches_high": null,
+            "routes_low": null,
+            "routes_high": null
+          },
+          "expected_red_zone_usage": "unknown",
+          "expected_ppr_ppg_range": {
+            "low": null,
+            "high": null
+          },
+          "role_stability": "medium",
+          "positive_role_tags": [
+            "round1_rb_commitment"
+          ],
+          "risk_role_tags": [
+            "shared_backfield_context",
+            "workload_projection_risk"
+          ],
+          "notes": "Operator-seeded inspect-only v0 role profile."
+        }
+      ]
+    },
+    {
+      "season": 2026,
+      "team": "PIT",
+      "team_name": "Pittsburgh Steelers",
+      "play_caller": "operator_seeded",
+      "head_coach": "operator_seeded",
+      "source_status": "operator_seeded",
+      "roles": [
+        {
+          "role": "WR2",
+          "role_family": "wide_receiver",
+          "role_description": "Secondary starting WR role in projected pass environment.",
+          "expected_volume_range": {
+            "targets_low": null,
+            "targets_high": null,
+            "touches_low": null,
+            "touches_high": null,
+            "routes_low": null,
+            "routes_high": null
+          },
+          "expected_red_zone_usage": "unknown",
+          "expected_ppr_ppg_range": {
+            "low": null,
+            "high": null
+          },
+          "role_stability": "medium",
+          "positive_role_tags": [
+            "organizational_development_path"
+          ],
+          "risk_role_tags": [
+            "qb_room_uncertainty",
+            "steelers_wr_room_watch",
+            "delayed_start_path"
+          ],
+          "notes": "Operator-seeded inspect-only v0 role profile."
+        },
+        {
+          "role": "slot_wr",
+          "role_family": "wide_receiver",
+          "role_description": "Primary slot WR role with underneath target concentration.",
+          "expected_volume_range": {
+            "targets_low": null,
+            "targets_high": null,
+            "touches_low": null,
+            "touches_high": null,
+            "routes_low": null,
+            "routes_high": null
+          },
+          "expected_red_zone_usage": "unknown",
+          "expected_ppr_ppg_range": {
+            "low": null,
+            "high": null
+          },
+          "role_stability": "medium",
+          "positive_role_tags": [
+            "organizational_development_path"
+          ],
+          "risk_role_tags": [
+            "qb_room_uncertainty",
+            "steelers_wr_room_watch",
+            "delayed_start_path"
+          ],
+          "notes": "Operator-seeded inspect-only v0 role profile."
+        },
+        {
+          "role": "QB_developmental",
+          "role_family": "quarterback",
+          "role_description": "Developmental QB role with uncertain near-term starts.",
+          "expected_volume_range": {
+            "targets_low": null,
+            "targets_high": null,
+            "touches_low": null,
+            "touches_high": null,
+            "routes_low": null,
+            "routes_high": null
+          },
+          "expected_red_zone_usage": "unknown",
+          "expected_ppr_ppg_range": {
+            "low": null,
+            "high": null
+          },
+          "role_stability": "medium",
+          "positive_role_tags": [
+            "organizational_development_path"
+          ],
+          "risk_role_tags": [
+            "qb_room_uncertainty",
+            "steelers_wr_room_watch",
+            "delayed_start_path"
+          ],
+          "notes": "Operator-seeded inspect-only v0 role profile."
+        }
+      ]
+    },
+    {
+      "season": 2026,
+      "team": "KC",
+      "team_name": "Kansas City Chiefs",
+      "play_caller": "operator_seeded",
+      "head_coach": "operator_seeded",
+      "source_status": "operator_seeded",
+      "roles": [
+        {
+          "role": "passing_down_rb",
+          "role_family": "running_back",
+          "role_description": "Passing-down RB role with target-driven PPR translation.",
+          "expected_volume_range": {
+            "targets_low": null,
+            "targets_high": null,
+            "touches_low": null,
+            "touches_high": null,
+            "routes_low": null,
+            "routes_high": null
+          },
+          "expected_red_zone_usage": "unknown",
+          "expected_ppr_ppg_range": {
+            "low": null,
+            "high": null
+          },
+          "role_stability": "medium",
+          "positive_role_tags": [
+            "high_powered_offense",
+            "passing_down_role_path"
+          ],
+          "risk_role_tags": [
+            "late_round_role_uncertainty",
+            "depth_chart_dependency"
+          ],
+          "notes": "Operator-seeded inspect-only v0 role profile."
+        },
+        {
+          "role": "injury_contingent_rb",
+          "role_family": "running_back",
+          "role_description": "Reserve RB role that spikes with injuries ahead.",
+          "expected_volume_range": {
+            "targets_low": null,
+            "targets_high": null,
+            "touches_low": null,
+            "touches_high": null,
+            "routes_low": null,
+            "routes_high": null
+          },
+          "expected_red_zone_usage": "unknown",
+          "expected_ppr_ppg_range": {
+            "low": null,
+            "high": null
+          },
+          "role_stability": "medium",
+          "positive_role_tags": [
+            "high_powered_offense",
+            "passing_down_role_path"
+          ],
+          "risk_role_tags": [
+            "late_round_role_uncertainty",
+            "depth_chart_dependency"
+          ],
+          "notes": "Operator-seeded inspect-only v0 role profile."
+        },
+        {
+          "role": "rotational_wr",
+          "role_family": "wide_receiver",
+          "role_description": "Rotational WR role with package-specific route participation.",
+          "expected_volume_range": {
+            "targets_low": null,
+            "targets_high": null,
+            "touches_low": null,
+            "touches_high": null,
+            "routes_low": null,
+            "routes_high": null
+          },
+          "expected_red_zone_usage": "unknown",
+          "expected_ppr_ppg_range": {
+            "low": null,
+            "high": null
+          },
+          "role_stability": "medium",
+          "positive_role_tags": [
+            "high_powered_offense",
+            "passing_down_role_path"
+          ],
+          "risk_role_tags": [
+            "late_round_role_uncertainty",
+            "depth_chart_dependency"
+          ],
+          "notes": "Operator-seeded inspect-only v0 role profile."
+        }
+      ]
+    },
+    {
+      "season": 2026,
+      "team": "BUF",
+      "team_name": "Buffalo Bills",
+      "play_caller": "operator_seeded",
+      "head_coach": "operator_seeded",
+      "source_status": "operator_seeded",
+      "roles": [
+        {
+          "role": "WR2",
+          "role_family": "wide_receiver",
+          "role_description": "Secondary starting WR role in projected pass environment.",
+          "expected_volume_range": {
+            "targets_low": null,
+            "targets_high": null,
+            "touches_low": null,
+            "touches_high": null,
+            "routes_low": null,
+            "routes_high": null
+          },
+          "expected_red_zone_usage": "unknown",
+          "expected_ppr_ppg_range": {
+            "low": null,
+            "high": null
+          },
+          "role_stability": "medium",
+          "positive_role_tags": [
+            "high_value_passing_environment",
+            "wr2_wr3_path"
+          ],
+          "risk_role_tags": [
+            "role_competition_risk",
+            "low_draft_capital_insulation"
+          ],
+          "notes": "Operator-seeded inspect-only v0 role profile."
+        },
+        {
+          "role": "WR3",
+          "role_family": "wide_receiver",
+          "role_description": "Tertiary WR role tied to 11-personnel and game-script volume.",
+          "expected_volume_range": {
+            "targets_low": null,
+            "targets_high": null,
+            "touches_low": null,
+            "touches_high": null,
+            "routes_low": null,
+            "routes_high": null
+          },
+          "expected_red_zone_usage": "unknown",
+          "expected_ppr_ppg_range": {
+            "low": null,
+            "high": null
+          },
+          "role_stability": "medium",
+          "positive_role_tags": [
+            "high_value_passing_environment",
+            "wr2_wr3_path"
+          ],
+          "risk_role_tags": [
+            "role_competition_risk",
+            "low_draft_capital_insulation"
+          ],
+          "notes": "Operator-seeded inspect-only v0 role profile."
+        },
+        {
+          "role": "slot_wr",
+          "role_family": "wide_receiver",
+          "role_description": "Primary slot WR role with underneath target concentration.",
+          "expected_volume_range": {
+            "targets_low": null,
+            "targets_high": null,
+            "touches_low": null,
+            "touches_high": null,
+            "routes_low": null,
+            "routes_high": null
+          },
+          "expected_red_zone_usage": "unknown",
+          "expected_ppr_ppg_range": {
+            "low": null,
+            "high": null
+          },
+          "role_stability": "medium",
+          "positive_role_tags": [
+            "high_value_passing_environment",
+            "wr2_wr3_path"
+          ],
+          "risk_role_tags": [
+            "role_competition_risk",
+            "low_draft_capital_insulation"
+          ],
+          "notes": "Operator-seeded inspect-only v0 role profile."
+        }
+      ]
+    },
+    {
+      "season": 2026,
+      "team": "NYG",
+      "team_name": "New York Giants",
+      "play_caller": "operator_seeded",
+      "head_coach": "operator_seeded",
+      "source_status": "operator_seeded",
+      "roles": [
+        {
+          "role": "WR2",
+          "role_family": "wide_receiver",
+          "role_description": "Secondary starting WR role in projected pass environment.",
+          "expected_volume_range": {
+            "targets_low": null,
+            "targets_high": null,
+            "touches_low": null,
+            "touches_high": null,
+            "routes_low": null,
+            "routes_high": null
+          },
+          "expected_red_zone_usage": "unknown",
+          "expected_ppr_ppg_range": {
+            "low": null,
+            "high": null
+          },
+          "role_stability": "medium",
+          "positive_role_tags": [
+            "year1_route_path",
+            "improved_offense_watch"
+          ],
+          "risk_role_tags": [
+            "role_competition_risk",
+            "profile_translation_risk"
+          ],
+          "notes": "Operator-seeded inspect-only v0 role profile."
+        },
+        {
+          "role": "rotational_wr",
+          "role_family": "wide_receiver",
+          "role_description": "Rotational WR role with package-specific route participation.",
+          "expected_volume_range": {
+            "targets_low": null,
+            "targets_high": null,
+            "touches_low": null,
+            "touches_high": null,
+            "routes_low": null,
+            "routes_high": null
+          },
+          "expected_red_zone_usage": "unknown",
+          "expected_ppr_ppg_range": {
+            "low": null,
+            "high": null
+          },
+          "role_stability": "medium",
+          "positive_role_tags": [
+            "year1_route_path",
+            "improved_offense_watch"
+          ],
+          "risk_role_tags": [
+            "role_competition_risk",
+            "profile_translation_risk"
+          ],
+          "notes": "Operator-seeded inspect-only v0 role profile."
+        }
+      ]
+    },
+    {
+      "season": 2026,
+      "team": "MIA",
+      "team_name": "Miami Dolphins",
+      "play_caller": "operator_seeded",
+      "head_coach": "operator_seeded",
+      "source_status": "operator_seeded",
+      "roles": [
+        {
+          "role": "WR3",
+          "role_family": "wide_receiver",
+          "role_description": "Tertiary WR role tied to 11-personnel and game-script volume.",
+          "expected_volume_range": {
+            "targets_low": null,
+            "targets_high": null,
+            "touches_low": null,
+            "touches_high": null,
+            "routes_low": null,
+            "routes_high": null
+          },
+          "expected_red_zone_usage": "unknown",
+          "expected_ppr_ppg_range": {
+            "low": null,
+            "high": null
+          },
+          "role_stability": "medium",
+          "positive_role_tags": [
+            "speed_space_environment"
+          ],
+          "risk_role_tags": [
+            "target_competition_cluster",
+            "role_assignment_uncertainty"
+          ],
+          "notes": "Operator-seeded inspect-only v0 role profile."
+        },
+        {
+          "role": "rotational_wr",
+          "role_family": "wide_receiver",
+          "role_description": "Rotational WR role with package-specific route participation.",
+          "expected_volume_range": {
+            "targets_low": null,
+            "targets_high": null,
+            "touches_low": null,
+            "touches_high": null,
+            "routes_low": null,
+            "routes_high": null
+          },
+          "expected_red_zone_usage": "unknown",
+          "expected_ppr_ppg_range": {
+            "low": null,
+            "high": null
+          },
+          "role_stability": "medium",
+          "positive_role_tags": [
+            "speed_space_environment"
+          ],
+          "risk_role_tags": [
+            "target_competition_cluster",
+            "role_assignment_uncertainty"
+          ],
+          "notes": "Operator-seeded inspect-only v0 role profile."
+        },
+        {
+          "role": "TE1",
+          "role_family": "tight_end",
+          "role_description": "Primary TE role with strong route and red-zone access.",
+          "expected_volume_range": {
+            "targets_low": null,
+            "targets_high": null,
+            "touches_low": null,
+            "touches_high": null,
+            "routes_low": null,
+            "routes_high": null
+          },
+          "expected_red_zone_usage": "unknown",
+          "expected_ppr_ppg_range": {
+            "low": null,
+            "high": null
+          },
+          "role_stability": "medium",
+          "positive_role_tags": [
+            "speed_space_environment"
+          ],
+          "risk_role_tags": [
+            "target_competition_cluster",
+            "role_assignment_uncertainty"
+          ],
+          "notes": "Operator-seeded inspect-only v0 role profile."
+        }
+      ]
+    },
+    {
+      "season": 2026,
+      "team": "CHI",
+      "team_name": "Chicago Bears",
+      "play_caller": "operator_seeded",
+      "head_coach": "operator_seeded",
+      "source_status": "operator_seeded",
+      "roles": [
+        {
+          "role": "WR3",
+          "role_family": "wide_receiver",
+          "role_description": "Tertiary WR role tied to 11-personnel and game-script volume.",
+          "expected_volume_range": {
+            "targets_low": null,
+            "targets_high": null,
+            "touches_low": null,
+            "touches_high": null,
+            "routes_low": null,
+            "routes_high": null
+          },
+          "expected_red_zone_usage": "unknown",
+          "expected_ppr_ppg_range": {
+            "low": null,
+            "high": null
+          },
+          "role_stability": "medium",
+          "positive_role_tags": [
+            "young_qb_growth_environment"
+          ],
+          "risk_role_tags": [
+            "target_hierarchy_uncertainty",
+            "role_competition_risk"
+          ],
+          "notes": "Operator-seeded inspect-only v0 role profile."
+        },
+        {
+          "role": "TE2",
+          "role_family": "tight_end",
+          "role_description": "Secondary TE role with mixed blocking and receiving duties.",
+          "expected_volume_range": {
+            "targets_low": null,
+            "targets_high": null,
+            "touches_low": null,
+            "touches_high": null,
+            "routes_low": null,
+            "routes_high": null
+          },
+          "expected_red_zone_usage": "unknown",
+          "expected_ppr_ppg_range": {
+            "low": null,
+            "high": null
+          },
+          "role_stability": "medium",
+          "positive_role_tags": [
+            "young_qb_growth_environment"
+          ],
+          "risk_role_tags": [
+            "target_hierarchy_uncertainty",
+            "role_competition_risk"
+          ],
+          "notes": "Operator-seeded inspect-only v0 role profile."
+        }
+      ]
+    },
+    {
+      "season": 2026,
+      "team": "JAX",
+      "team_name": "Jacksonville Jaguars",
+      "play_caller": "operator_seeded",
+      "head_coach": "operator_seeded",
+      "source_status": "operator_seeded",
+      "roles": [
+        {
+          "role": "TE2",
+          "role_family": "tight_end",
+          "role_description": "Secondary TE role with mixed blocking and receiving duties.",
+          "expected_volume_range": {
+            "targets_low": null,
+            "targets_high": null,
+            "touches_low": null,
+            "touches_high": null,
+            "routes_low": null,
+            "routes_high": null
+          },
+          "expected_red_zone_usage": "unknown",
+          "expected_ppr_ppg_range": {
+            "low": null,
+            "high": null
+          },
+          "role_stability": "medium",
+          "positive_role_tags": [
+            "data_savvy_org_validation",
+            "late_round_te_watch"
+          ],
+          "risk_role_tags": [
+            "round5_insulation_risk",
+            "depth_chart_path_uncertain",
+            "delayed_te_translation_watch"
+          ],
+          "notes": "Operator-seeded inspect-only v0 role profile."
+        },
+        {
+          "role": "blocking_rotational_te",
+          "role_family": "tight_end",
+          "role_description": "Blocking-forward rotational TE role with limited routes.",
+          "expected_volume_range": {
+            "targets_low": null,
+            "targets_high": null,
+            "touches_low": null,
+            "touches_high": null,
+            "routes_low": null,
+            "routes_high": null
+          },
+          "expected_red_zone_usage": "unknown",
+          "expected_ppr_ppg_range": {
+            "low": null,
+            "high": null
+          },
+          "role_stability": "medium",
+          "positive_role_tags": [
+            "data_savvy_org_validation",
+            "late_round_te_watch"
+          ],
+          "risk_role_tags": [
+            "round5_insulation_risk",
+            "depth_chart_path_uncertain",
+            "delayed_te_translation_watch"
+          ],
+          "notes": "Operator-seeded inspect-only v0 role profile."
+        },
+        {
+          "role": "move_te",
+          "role_family": "tight_end",
+          "role_description": "Move TE role that creates matchup opportunities from detached alignments.",
+          "expected_volume_range": {
+            "targets_low": null,
+            "targets_high": null,
+            "touches_low": null,
+            "touches_high": null,
+            "routes_low": null,
+            "routes_high": null
+          },
+          "expected_red_zone_usage": "unknown",
+          "expected_ppr_ppg_range": {
+            "low": null,
+            "high": null
+          },
+          "role_stability": "medium",
+          "positive_role_tags": [
+            "data_savvy_org_validation",
+            "late_round_te_watch"
+          ],
+          "risk_role_tags": [
+            "round5_insulation_risk",
+            "depth_chart_path_uncertain",
+            "delayed_te_translation_watch"
+          ],
+          "notes": "Operator-seeded inspect-only v0 role profile."
+        }
+      ]
+    }
+  ]
+}
