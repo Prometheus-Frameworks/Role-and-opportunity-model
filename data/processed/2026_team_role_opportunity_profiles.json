@@ -10,6 +10,14 @@
       "play_caller": "operator_seeded",
       "head_coach": "operator_seeded",
       "source_status": "operator_seeded",
+      "positive_team_context_tags": [
+        "pace_boost_candidate",
+        "pass_environment_upside"
+      ],
+      "risk_team_context_tags": [
+        "qb_context_uncertainty",
+        "scheme_transition_variance"
+      ],
       "roles": [
         {
           "role": "WR2",
@@ -30,12 +38,12 @@
           },
           "role_stability": "medium",
           "positive_role_tags": [
-            "pace_boost_candidate",
-            "pass_environment_upside"
+            "starter_route_participation",
+            "intermediate_target_path"
           ],
           "risk_role_tags": [
-            "qb_context_uncertainty",
-            "scheme_transition_variance"
+            "target_competition_risk",
+            "week_to_week_usage_variance"
           ],
           "notes": "Operator-seeded inspect-only v0 role profile."
         },
@@ -58,12 +66,12 @@
           },
           "role_stability": "medium",
           "positive_role_tags": [
-            "pace_boost_candidate",
-            "pass_environment_upside"
+            "high_completion_role",
+            "chain_mover_volume"
           ],
           "risk_role_tags": [
-            "qb_context_uncertainty",
-            "scheme_transition_variance"
+            "aDOT_ceiling_cap",
+            "middle_field_competition"
           ],
           "notes": "Operator-seeded inspect-only v0 role profile."
         },
@@ -86,12 +94,12 @@
           },
           "role_stability": "medium",
           "positive_role_tags": [
-            "pace_boost_candidate",
-            "pass_environment_upside"
+            "stable_route_participation",
+            "red_zone_leverage_path"
           ],
           "risk_role_tags": [
-            "qb_context_uncertainty",
-            "scheme_transition_variance"
+            "blocking_assignment_variance",
+            "target_competition_risk"
           ],
           "notes": "Operator-seeded inspect-only v0 role profile."
         }
@@ -104,6 +112,13 @@
       "play_caller": "operator_seeded",
       "head_coach": "operator_seeded",
       "source_status": "operator_seeded",
+      "positive_team_context_tags": [
+        "improved_offense_watch"
+      ],
+      "risk_team_context_tags": [
+        "offensive_line_dependency",
+        "play_caller_transfer_uncertainty"
+      ],
       "roles": [
         {
           "role": "RB1",
@@ -124,12 +139,13 @@
           },
           "role_stability": "medium",
           "positive_role_tags": [
-            "lead_rb_volume_watch",
-            "improved_offense_watch"
+            "lead_back_touch_floor",
+            "red_zone_carry_path",
+            "lead_rb_volume_watch"
           ],
           "risk_role_tags": [
-            "offensive_line_dependency",
-            "play_caller_transfer_uncertainty"
+            "game_script_sensitivity",
+            "efficiency_dependency"
           ],
           "notes": "Operator-seeded inspect-only v0 role profile."
         },
@@ -152,11 +168,12 @@
           },
           "role_stability": "medium",
           "positive_role_tags": [
-            "lead_rb_volume_watch",
-            "improved_offense_watch"
+            "starter_route_participation",
+            "intermediate_target_path"
           ],
           "risk_role_tags": [
-            "offensive_line_dependency",
+            "target_competition_risk",
+            "week_to_week_usage_variance",
             "play_caller_transfer_uncertainty"
           ],
           "notes": "Operator-seeded inspect-only v0 role profile."
@@ -180,11 +197,12 @@
           },
           "role_stability": "medium",
           "positive_role_tags": [
-            "lead_rb_volume_watch",
-            "improved_offense_watch"
+            "stable_route_participation",
+            "red_zone_leverage_path"
           ],
           "risk_role_tags": [
-            "offensive_line_dependency",
+            "blocking_assignment_variance",
+            "target_competition_risk",
             "play_caller_transfer_uncertainty"
           ],
           "notes": "Operator-seeded inspect-only v0 role profile."
@@ -198,6 +216,13 @@
       "play_caller": "operator_seeded",
       "head_coach": "operator_seeded",
       "source_status": "operator_seeded",
+      "positive_team_context_tags": [
+        "backfield_opportunity_watch"
+      ],
+      "risk_team_context_tags": [
+        "young_qb_development_dependency",
+        "offense_environment_uncertainty"
+      ],
       "roles": [
         {
           "role": "RB1",
@@ -218,12 +243,13 @@
           },
           "role_stability": "medium",
           "positive_role_tags": [
-            "backfield_opportunity_watch",
-            "wr1_depth_chart_path"
+            "lead_back_touch_floor",
+            "red_zone_carry_path",
+            "backfield_opportunity_watch"
           ],
           "risk_role_tags": [
-            "young_qb_development_dependency",
-            "offense_environment_uncertainty"
+            "game_script_sensitivity",
+            "efficiency_dependency"
           ],
           "notes": "Operator-seeded inspect-only v0 role profile."
         },
@@ -246,12 +272,13 @@
           },
           "role_stability": "medium",
           "positive_role_tags": [
-            "backfield_opportunity_watch",
-            "wr1_depth_chart_path"
+            "change_of_pace_explosive_path",
+            "contingent_volume_upside",
+            "backfield_opportunity_watch"
           ],
           "risk_role_tags": [
-            "young_qb_development_dependency",
-            "offense_environment_uncertainty"
+            "touch_count_volatility",
+            "weekly_floor_instability"
           ],
           "notes": "Operator-seeded inspect-only v0 role profile."
         },
@@ -274,12 +301,13 @@
           },
           "role_stability": "medium",
           "positive_role_tags": [
-            "backfield_opportunity_watch",
+            "alpha_target_share_path",
+            "high_value_route_tree",
             "wr1_depth_chart_path"
           ],
           "risk_role_tags": [
-            "young_qb_development_dependency",
-            "offense_environment_uncertainty"
+            "coverage_attention_risk",
+            "qb_efficiency_dependency"
           ],
           "notes": "Operator-seeded inspect-only v0 role profile."
         }
@@ -292,6 +320,14 @@
       "play_caller": "operator_seeded",
       "head_coach": "operator_seeded",
       "source_status": "operator_seeded",
+      "positive_team_context_tags": [
+        "jayden_daniels_environment",
+        "high_upside_offense",
+        "available_target_opportunity"
+      ],
+      "risk_team_context_tags": [
+        "role_projection_uncertainty"
+      ],
       "roles": [
         {
           "role": "slot_wr",
@@ -312,12 +348,12 @@
           },
           "role_stability": "medium",
           "positive_role_tags": [
-            "jayden_daniels_environment",
-            "high_upside_offense",
-            "available_target_opportunity"
+            "high_completion_role",
+            "chain_mover_volume"
           ],
           "risk_role_tags": [
-            "role_projection_uncertainty"
+            "aDOT_ceiling_cap",
+            "middle_field_competition"
           ],
           "notes": "Operator-seeded inspect-only v0 role profile."
         },
@@ -340,12 +376,12 @@
           },
           "role_stability": "medium",
           "positive_role_tags": [
-            "jayden_daniels_environment",
-            "high_upside_offense",
-            "available_target_opportunity"
+            "starter_route_participation",
+            "intermediate_target_path"
           ],
           "risk_role_tags": [
-            "role_projection_uncertainty"
+            "target_competition_risk",
+            "week_to_week_usage_variance"
           ],
           "notes": "Operator-seeded inspect-only v0 role profile."
         },
@@ -368,12 +404,12 @@
           },
           "role_stability": "medium",
           "positive_role_tags": [
-            "jayden_daniels_environment",
-            "high_upside_offense",
-            "available_target_opportunity"
+            "ppr_target_density",
+            "two_minute_role_path"
           ],
           "risk_role_tags": [
-            "role_projection_uncertainty"
+            "rush_attempt_floor",
+            "pass_protection_substitution_risk"
           ],
           "notes": "Operator-seeded inspect-only v0 role profile."
         }
@@ -386,6 +422,15 @@
       "play_caller": "operator_seeded",
       "head_coach": "operator_seeded",
       "source_status": "operator_seeded",
+      "positive_team_context_tags": [
+        "mcvay_developmental_environment",
+        "efficient_passing_environment",
+        "heavy_personnel_role_watch"
+      ],
+      "risk_team_context_tags": [
+        "veteran_depth_chart_block",
+        "role_specific_usage_dependency"
+      ],
       "roles": [
         {
           "role": "WR1",
@@ -406,13 +451,12 @@
           },
           "role_stability": "medium",
           "positive_role_tags": [
-            "mcvay_developmental_environment",
-            "efficient_passing_environment",
-            "heavy_personnel_role_watch"
+            "alpha_target_share_path",
+            "high_value_route_tree"
           ],
           "risk_role_tags": [
-            "veteran_depth_chart_block",
-            "role_specific_usage_dependency"
+            "coverage_attention_risk",
+            "qb_efficiency_dependency"
           ],
           "notes": "Operator-seeded inspect-only v0 role profile."
         },
@@ -435,13 +479,12 @@
           },
           "role_stability": "medium",
           "positive_role_tags": [
-            "mcvay_developmental_environment",
-            "efficient_passing_environment",
-            "heavy_personnel_role_watch"
+            "starter_route_participation",
+            "intermediate_target_path"
           ],
           "risk_role_tags": [
-            "veteran_depth_chart_block",
-            "role_specific_usage_dependency"
+            "target_competition_risk",
+            "week_to_week_usage_variance"
           ],
           "notes": "Operator-seeded inspect-only v0 role profile."
         },
@@ -464,13 +507,12 @@
           },
           "role_stability": "medium",
           "positive_role_tags": [
-            "mcvay_developmental_environment",
-            "efficient_passing_environment",
-            "heavy_personnel_role_watch"
+            "stable_route_participation",
+            "red_zone_leverage_path"
           ],
           "risk_role_tags": [
-            "veteran_depth_chart_block",
-            "role_specific_usage_dependency"
+            "blocking_assignment_variance",
+            "target_competition_risk"
           ],
           "notes": "Operator-seeded inspect-only v0 role profile."
         },
@@ -493,13 +535,12 @@
           },
           "role_stability": "medium",
           "positive_role_tags": [
-            "mcvay_developmental_environment",
-            "efficient_passing_environment",
-            "heavy_personnel_role_watch"
+            "matchup_creation_role",
+            "formation_mismatch_upside"
           ],
           "risk_role_tags": [
-            "veteran_depth_chart_block",
-            "role_specific_usage_dependency"
+            "gameplan_specific_usage",
+            "alignment_variance_risk"
           ],
           "notes": "Operator-seeded inspect-only v0 role profile."
         },
@@ -522,13 +563,12 @@
           },
           "role_stability": "medium",
           "positive_role_tags": [
-            "mcvay_developmental_environment",
-            "efficient_passing_environment",
-            "heavy_personnel_role_watch"
+            "development_runway_upside",
+            "organizational_investment_signal"
           ],
           "risk_role_tags": [
-            "veteran_depth_chart_block",
-            "role_specific_usage_dependency"
+            "uncertain_start_timing",
+            "early_season_volume_risk"
           ],
           "notes": "Operator-seeded inspect-only v0 role profile."
         }
@@ -541,6 +581,13 @@
       "play_caller": "operator_seeded",
       "head_coach": "operator_seeded",
       "source_status": "operator_seeded",
+      "positive_team_context_tags": [
+        "high_efficiency_environment"
+      ],
+      "risk_team_context_tags": [
+        "depth_chart_volume_cap",
+        "target_concentration_ahead"
+      ],
       "roles": [
         {
           "role": "WR3",
@@ -561,11 +608,12 @@
           },
           "role_stability": "medium",
           "positive_role_tags": [
-            "high_efficiency_environment"
+            "three_wr_set_access",
+            "injury_elevation_path"
           ],
           "risk_role_tags": [
-            "depth_chart_volume_cap",
-            "target_concentration_ahead"
+            "package_dependency",
+            "low_weekly_floor"
           ],
           "notes": "Operator-seeded inspect-only v0 role profile."
         },
@@ -588,11 +636,12 @@
           },
           "role_stability": "medium",
           "positive_role_tags": [
-            "high_efficiency_environment"
+            "stable_route_participation",
+            "red_zone_leverage_path"
           ],
           "risk_role_tags": [
-            "depth_chart_volume_cap",
-            "target_concentration_ahead"
+            "blocking_assignment_variance",
+            "target_competition_risk"
           ],
           "notes": "Operator-seeded inspect-only v0 role profile."
         }
@@ -605,6 +654,15 @@
       "play_caller": "operator_seeded",
       "head_coach": "operator_seeded",
       "source_status": "operator_seeded",
+      "positive_team_context_tags": [
+        "concentrated_wr_investment",
+        "rookie_wr_priority_signal"
+      ],
+      "risk_team_context_tags": [
+        "browns_offensive_volatility",
+        "target_competition_between_rookies",
+        "qb_environment_uncertainty"
+      ],
       "roles": [
         {
           "role": "WR1",
@@ -625,13 +683,12 @@
           },
           "role_stability": "medium",
           "positive_role_tags": [
-            "concentrated_wr_investment",
-            "rookie_wr_priority_signal"
+            "alpha_target_share_path",
+            "high_value_route_tree"
           ],
           "risk_role_tags": [
-            "browns_offensive_volatility",
-            "target_competition_between_rookies",
-            "qb_environment_uncertainty"
+            "coverage_attention_risk",
+            "qb_efficiency_dependency"
           ],
           "notes": "Operator-seeded inspect-only v0 role profile."
         },
@@ -654,13 +711,12 @@
           },
           "role_stability": "medium",
           "positive_role_tags": [
-            "concentrated_wr_investment",
-            "rookie_wr_priority_signal"
+            "starter_route_participation",
+            "intermediate_target_path"
           ],
           "risk_role_tags": [
-            "browns_offensive_volatility",
-            "target_competition_between_rookies",
-            "qb_environment_uncertainty"
+            "target_competition_risk",
+            "week_to_week_usage_variance"
           ],
           "notes": "Operator-seeded inspect-only v0 role profile."
         }
@@ -673,6 +729,15 @@
       "play_caller": "operator_seeded",
       "head_coach": "operator_seeded",
       "source_status": "operator_seeded",
+      "positive_team_context_tags": [
+        "shanahan_efficiency_environment",
+        "yac_creation_scheme"
+      ],
+      "risk_team_context_tags": [
+        "low_pass_volume_risk",
+        "role_specific_usage_dependency",
+        "day2_49ers_skill_pick_hit_rate_caution"
+      ],
       "roles": [
         {
           "role": "WR2",
@@ -693,13 +758,12 @@
           },
           "role_stability": "medium",
           "positive_role_tags": [
-            "shanahan_efficiency_environment",
-            "yac_creation_scheme"
+            "starter_route_participation",
+            "intermediate_target_path"
           ],
           "risk_role_tags": [
-            "low_pass_volume_risk",
-            "role_specific_usage_dependency",
-            "day2_49ers_skill_pick_hit_rate_caution"
+            "target_competition_risk",
+            "week_to_week_usage_variance"
           ],
           "notes": "Operator-seeded inspect-only v0 role profile."
         },
@@ -722,13 +786,12 @@
           },
           "role_stability": "medium",
           "positive_role_tags": [
-            "shanahan_efficiency_environment",
-            "yac_creation_scheme"
+            "specialized_package_usage",
+            "depth_chart_climb_path"
           ],
           "risk_role_tags": [
-            "low_pass_volume_risk",
-            "role_specific_usage_dependency",
-            "day2_49ers_skill_pick_hit_rate_caution"
+            "snap_share_instability",
+            "target_floor_risk"
           ],
           "notes": "Operator-seeded inspect-only v0 role profile."
         }
@@ -741,6 +804,13 @@
       "play_caller": "operator_seeded",
       "head_coach": "operator_seeded",
       "source_status": "operator_seeded",
+      "positive_team_context_tags": [
+        "round1_rb_commitment"
+      ],
+      "risk_team_context_tags": [
+        "shared_backfield_context",
+        "workload_projection_risk"
+      ],
       "roles": [
         {
           "role": "RB1",
@@ -761,11 +831,12 @@
           },
           "role_stability": "medium",
           "positive_role_tags": [
-            "round1_rb_commitment"
+            "lead_back_touch_floor",
+            "red_zone_carry_path"
           ],
           "risk_role_tags": [
-            "shared_backfield_context",
-            "workload_projection_risk"
+            "game_script_sensitivity",
+            "efficiency_dependency"
           ],
           "notes": "Operator-seeded inspect-only v0 role profile."
         },
@@ -788,11 +859,12 @@
           },
           "role_stability": "medium",
           "positive_role_tags": [
-            "round1_rb_commitment"
+            "change_of_pace_explosive_path",
+            "contingent_volume_upside"
           ],
           "risk_role_tags": [
-            "shared_backfield_context",
-            "workload_projection_risk"
+            "touch_count_volatility",
+            "weekly_floor_instability"
           ],
           "notes": "Operator-seeded inspect-only v0 role profile."
         }
@@ -805,6 +877,14 @@
       "play_caller": "operator_seeded",
       "head_coach": "operator_seeded",
       "source_status": "operator_seeded",
+      "positive_team_context_tags": [
+        "organizational_development_path"
+      ],
+      "risk_team_context_tags": [
+        "qb_room_uncertainty",
+        "steelers_wr_room_watch",
+        "delayed_start_path"
+      ],
       "roles": [
         {
           "role": "WR2",
@@ -825,12 +905,12 @@
           },
           "role_stability": "medium",
           "positive_role_tags": [
-            "organizational_development_path"
+            "starter_route_participation",
+            "intermediate_target_path"
           ],
           "risk_role_tags": [
-            "qb_room_uncertainty",
-            "steelers_wr_room_watch",
-            "delayed_start_path"
+            "target_competition_risk",
+            "week_to_week_usage_variance"
           ],
           "notes": "Operator-seeded inspect-only v0 role profile."
         },
@@ -853,12 +933,12 @@
           },
           "role_stability": "medium",
           "positive_role_tags": [
-            "organizational_development_path"
+            "high_completion_role",
+            "chain_mover_volume"
           ],
           "risk_role_tags": [
-            "qb_room_uncertainty",
-            "steelers_wr_room_watch",
-            "delayed_start_path"
+            "aDOT_ceiling_cap",
+            "middle_field_competition"
           ],
           "notes": "Operator-seeded inspect-only v0 role profile."
         },
@@ -881,12 +961,12 @@
           },
           "role_stability": "medium",
           "positive_role_tags": [
-            "organizational_development_path"
+            "development_runway_upside",
+            "organizational_investment_signal"
           ],
           "risk_role_tags": [
-            "qb_room_uncertainty",
-            "steelers_wr_room_watch",
-            "delayed_start_path"
+            "uncertain_start_timing",
+            "early_season_volume_risk"
           ],
           "notes": "Operator-seeded inspect-only v0 role profile."
         }
@@ -899,6 +979,14 @@
       "play_caller": "operator_seeded",
       "head_coach": "operator_seeded",
       "source_status": "operator_seeded",
+      "positive_team_context_tags": [
+        "high_powered_offense",
+        "passing_down_role_path"
+      ],
+      "risk_team_context_tags": [
+        "late_round_role_uncertainty",
+        "depth_chart_dependency"
+      ],
       "roles": [
         {
           "role": "passing_down_rb",
@@ -919,12 +1007,12 @@
           },
           "role_stability": "medium",
           "positive_role_tags": [
-            "high_powered_offense",
-            "passing_down_role_path"
+            "ppr_target_density",
+            "two_minute_role_path"
           ],
           "risk_role_tags": [
-            "late_round_role_uncertainty",
-            "depth_chart_dependency"
+            "rush_attempt_floor",
+            "pass_protection_substitution_risk"
           ],
           "notes": "Operator-seeded inspect-only v0 role profile."
         },
@@ -947,12 +1035,12 @@
           },
           "role_stability": "medium",
           "positive_role_tags": [
-            "high_powered_offense",
-            "passing_down_role_path"
+            "contingent_workhorse_upside",
+            "bench_stash_leverage"
           ],
           "risk_role_tags": [
-            "late_round_role_uncertainty",
-            "depth_chart_dependency"
+            "uncertain_standalone_touches",
+            "inactive_week_risk"
           ],
           "notes": "Operator-seeded inspect-only v0 role profile."
         },
@@ -975,12 +1063,12 @@
           },
           "role_stability": "medium",
           "positive_role_tags": [
-            "high_powered_offense",
-            "passing_down_role_path"
+            "specialized_package_usage",
+            "depth_chart_climb_path"
           ],
           "risk_role_tags": [
-            "late_round_role_uncertainty",
-            "depth_chart_dependency"
+            "snap_share_instability",
+            "target_floor_risk"
           ],
           "notes": "Operator-seeded inspect-only v0 role profile."
         }
@@ -993,6 +1081,14 @@
       "play_caller": "operator_seeded",
       "head_coach": "operator_seeded",
       "source_status": "operator_seeded",
+      "positive_team_context_tags": [
+        "high_value_passing_environment",
+        "wr2_wr3_path"
+      ],
+      "risk_team_context_tags": [
+        "role_competition_risk",
+        "low_draft_capital_insulation"
+      ],
       "roles": [
         {
           "role": "WR2",
@@ -1013,12 +1109,12 @@
           },
           "role_stability": "medium",
           "positive_role_tags": [
-            "high_value_passing_environment",
-            "wr2_wr3_path"
+            "starter_route_participation",
+            "intermediate_target_path"
           ],
           "risk_role_tags": [
-            "role_competition_risk",
-            "low_draft_capital_insulation"
+            "target_competition_risk",
+            "week_to_week_usage_variance"
           ],
           "notes": "Operator-seeded inspect-only v0 role profile."
         },
@@ -1041,12 +1137,12 @@
           },
           "role_stability": "medium",
           "positive_role_tags": [
-            "high_value_passing_environment",
-            "wr2_wr3_path"
+            "three_wr_set_access",
+            "injury_elevation_path"
           ],
           "risk_role_tags": [
-            "role_competition_risk",
-            "low_draft_capital_insulation"
+            "package_dependency",
+            "low_weekly_floor"
           ],
           "notes": "Operator-seeded inspect-only v0 role profile."
         },
@@ -1069,12 +1165,12 @@
           },
           "role_stability": "medium",
           "positive_role_tags": [
-            "high_value_passing_environment",
-            "wr2_wr3_path"
+            "high_completion_role",
+            "chain_mover_volume"
           ],
           "risk_role_tags": [
-            "role_competition_risk",
-            "low_draft_capital_insulation"
+            "aDOT_ceiling_cap",
+            "middle_field_competition"
           ],
           "notes": "Operator-seeded inspect-only v0 role profile."
         }
@@ -1087,6 +1183,14 @@
       "play_caller": "operator_seeded",
       "head_coach": "operator_seeded",
       "source_status": "operator_seeded",
+      "positive_team_context_tags": [
+        "year1_route_path",
+        "improved_offense_watch"
+      ],
+      "risk_team_context_tags": [
+        "role_competition_risk",
+        "profile_translation_risk"
+      ],
       "roles": [
         {
           "role": "WR2",
@@ -1107,12 +1211,12 @@
           },
           "role_stability": "medium",
           "positive_role_tags": [
-            "year1_route_path",
-            "improved_offense_watch"
+            "starter_route_participation",
+            "intermediate_target_path"
           ],
           "risk_role_tags": [
-            "role_competition_risk",
-            "profile_translation_risk"
+            "target_competition_risk",
+            "week_to_week_usage_variance"
           ],
           "notes": "Operator-seeded inspect-only v0 role profile."
         },
@@ -1135,12 +1239,12 @@
           },
           "role_stability": "medium",
           "positive_role_tags": [
-            "year1_route_path",
-            "improved_offense_watch"
+            "specialized_package_usage",
+            "depth_chart_climb_path"
           ],
           "risk_role_tags": [
-            "role_competition_risk",
-            "profile_translation_risk"
+            "snap_share_instability",
+            "target_floor_risk"
           ],
           "notes": "Operator-seeded inspect-only v0 role profile."
         }
@@ -1153,6 +1257,13 @@
       "play_caller": "operator_seeded",
       "head_coach": "operator_seeded",
       "source_status": "operator_seeded",
+      "positive_team_context_tags": [
+        "speed_space_environment"
+      ],
+      "risk_team_context_tags": [
+        "target_competition_cluster",
+        "role_assignment_uncertainty"
+      ],
       "roles": [
         {
           "role": "WR3",
@@ -1173,11 +1284,12 @@
           },
           "role_stability": "medium",
           "positive_role_tags": [
-            "speed_space_environment"
+            "three_wr_set_access",
+            "injury_elevation_path"
           ],
           "risk_role_tags": [
-            "target_competition_cluster",
-            "role_assignment_uncertainty"
+            "package_dependency",
+            "low_weekly_floor"
           ],
           "notes": "Operator-seeded inspect-only v0 role profile."
         },
@@ -1200,11 +1312,12 @@
           },
           "role_stability": "medium",
           "positive_role_tags": [
-            "speed_space_environment"
+            "specialized_package_usage",
+            "depth_chart_climb_path"
           ],
           "risk_role_tags": [
-            "target_competition_cluster",
-            "role_assignment_uncertainty"
+            "snap_share_instability",
+            "target_floor_risk"
           ],
           "notes": "Operator-seeded inspect-only v0 role profile."
         },
@@ -1227,11 +1340,12 @@
           },
           "role_stability": "medium",
           "positive_role_tags": [
-            "speed_space_environment"
+            "stable_route_participation",
+            "red_zone_leverage_path"
           ],
           "risk_role_tags": [
-            "target_competition_cluster",
-            "role_assignment_uncertainty"
+            "blocking_assignment_variance",
+            "target_competition_risk"
           ],
           "notes": "Operator-seeded inspect-only v0 role profile."
         }
@@ -1244,6 +1358,13 @@
       "play_caller": "operator_seeded",
       "head_coach": "operator_seeded",
       "source_status": "operator_seeded",
+      "positive_team_context_tags": [
+        "young_qb_growth_environment"
+      ],
+      "risk_team_context_tags": [
+        "target_hierarchy_uncertainty",
+        "role_competition_risk"
+      ],
       "roles": [
         {
           "role": "WR3",
@@ -1264,11 +1385,12 @@
           },
           "role_stability": "medium",
           "positive_role_tags": [
-            "young_qb_growth_environment"
+            "three_wr_set_access",
+            "injury_elevation_path"
           ],
           "risk_role_tags": [
-            "target_hierarchy_uncertainty",
-            "role_competition_risk"
+            "package_dependency",
+            "low_weekly_floor"
           ],
           "notes": "Operator-seeded inspect-only v0 role profile."
         },
@@ -1291,11 +1413,12 @@
           },
           "role_stability": "medium",
           "positive_role_tags": [
-            "young_qb_growth_environment"
+            "multi_te_personnel_access",
+            "contingent_route_upside"
           ],
           "risk_role_tags": [
-            "target_hierarchy_uncertainty",
-            "role_competition_risk"
+            "limited_route_share",
+            "touchdown_dependency"
           ],
           "notes": "Operator-seeded inspect-only v0 role profile."
         }
@@ -1308,6 +1431,15 @@
       "play_caller": "operator_seeded",
       "head_coach": "operator_seeded",
       "source_status": "operator_seeded",
+      "positive_team_context_tags": [
+        "data_savvy_org_validation",
+        "late_round_te_watch"
+      ],
+      "risk_team_context_tags": [
+        "round5_insulation_risk",
+        "depth_chart_path_uncertain",
+        "delayed_te_translation_watch"
+      ],
       "roles": [
         {
           "role": "TE2",
@@ -1328,13 +1460,13 @@
           },
           "role_stability": "medium",
           "positive_role_tags": [
-            "data_savvy_org_validation",
+            "multi_te_personnel_access",
+            "contingent_route_upside",
             "late_round_te_watch"
           ],
           "risk_role_tags": [
-            "round5_insulation_risk",
-            "depth_chart_path_uncertain",
-            "delayed_te_translation_watch"
+            "limited_route_share",
+            "touchdown_dependency"
           ],
           "notes": "Operator-seeded inspect-only v0 role profile."
         },
@@ -1357,13 +1489,12 @@
           },
           "role_stability": "medium",
           "positive_role_tags": [
-            "data_savvy_org_validation",
-            "late_round_te_watch"
+            "snap_pathway_via_blocking",
+            "heavy_personnel_access"
           ],
           "risk_role_tags": [
-            "round5_insulation_risk",
-            "depth_chart_path_uncertain",
-            "delayed_te_translation_watch"
+            "limited_target_translation",
+            "route_participation_cap"
           ],
           "notes": "Operator-seeded inspect-only v0 role profile."
         },
@@ -1386,13 +1517,12 @@
           },
           "role_stability": "medium",
           "positive_role_tags": [
-            "data_savvy_org_validation",
-            "late_round_te_watch"
+            "matchup_creation_role",
+            "formation_mismatch_upside"
           ],
           "risk_role_tags": [
-            "round5_insulation_risk",
-            "depth_chart_path_uncertain",
-            "delayed_te_translation_watch"
+            "gameplan_specific_usage",
+            "alignment_variance_risk"
           ],
           "notes": "Operator-seeded inspect-only v0 role profile."
         }

@@ -35,6 +35,13 @@ This is a deterministic, inspectable, operator-seeded version:
 
 This file captures team-scoped role interpretations for operator-priority teams, including role descriptions, range placeholders, risk/positive tags, and role stability labels.
 
+Each team profile can also include:
+
+- `positive_team_context_tags`
+- `risk_team_context_tags`
+
+These fields hold broad environment signals, while `positive_role_tags` and `risk_role_tags` are reserved for role-specific fantasy translation signals (e.g., RB1-specific versus WR2-specific).
+
 ### 2) Generic role-to-fantasy baselines
 
 `data/processed/2026_role_to_fantasy_baselines.json`

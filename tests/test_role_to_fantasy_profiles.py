@@ -140,6 +140,19 @@ class RoleToFantasyProfileTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("duplicate role", result.stdout)
 
+    def test_hou_and_ten_role_specific_tags_do_not_leak(self) -> None:
+        by_team = {p["team"]: p for p in load_json(TEAM_PATH)["team_profiles"]}
+
+        hou_roles = {role["role"]: role for role in by_team["HOU"]["roles"]}
+        self.assertIn("lead_rb_volume_watch", set(hou_roles["RB1"]["positive_role_tags"]))
+        self.assertNotIn("lead_rb_volume_watch", set(hou_roles["WR2"]["positive_role_tags"]))
+        self.assertNotIn("lead_rb_volume_watch", set(hou_roles["TE1"]["positive_role_tags"]))
+
+        ten_roles = {role["role"]: role for role in by_team["TEN"]["roles"]}
+        self.assertIn("wr1_depth_chart_path", set(ten_roles["WR1"]["positive_role_tags"]))
+        self.assertNotIn("wr1_depth_chart_path", set(ten_roles["RB1"]["positive_role_tags"]))
+        self.assertNotIn("wr1_depth_chart_path", set(ten_roles["RB2_change_of_pace"]["positive_role_tags"]))
+
 
 if __name__ == "__main__":
     unittest.main()

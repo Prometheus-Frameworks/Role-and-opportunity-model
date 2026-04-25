@@ -103,6 +103,13 @@ def validate_team_artifact(data: dict[str, Any], errors: list[str]) -> None:
             continue
 
         _check_required_fields(profile, REQUIRED_TEAM_FIELDS, f"team profile[{team_index}]", errors)
+        for optional_tag_field in ("positive_team_context_tags", "risk_team_context_tags"):
+            if optional_tag_field in profile:
+                value = profile[optional_tag_field]
+                if not isinstance(value, list) or not all(isinstance(tag, str) for tag in value):
+                    errors.append(
+                        f"team profile[{team_index}] '{optional_tag_field}' must be a list of strings when provided"
+                    )
 
         roles = profile.get("roles")
         if not isinstance(roles, list):
