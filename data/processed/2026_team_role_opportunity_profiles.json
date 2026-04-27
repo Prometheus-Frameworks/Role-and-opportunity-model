@@ -39,11 +39,16 @@
           "role_stability": "medium",
           "positive_role_tags": [
             "starter_route_participation",
-            "intermediate_target_path"
+            "intermediate_target_path",
+            "premium_rookie_wr2_path",
+            "wr1_challenge_watch"
           ],
           "risk_role_tags": [
             "target_competition_risk",
-            "week_to_week_usage_variance"
+            "week_to_week_usage_variance",
+            "olave_target_hierarchy",
+            "rookie_target_share_uncertainty",
+            "pass_volume_projection_needs_verification"
           ],
           "notes": "Operator-seeded inspect-only v0 role profile."
         },

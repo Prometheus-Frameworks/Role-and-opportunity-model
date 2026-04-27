@@ -98,6 +98,19 @@ class RoleToFantasyProfileTests(unittest.TestCase):
 
         self.assertIn("late_round_te_watch", all_positive_tags)
 
+    def test_no_wr2_tyson_hierarchy_watch_tags_present(self) -> None:
+        by_team = {p["team"]: p for p in load_json(TEAM_PATH)["team_profiles"]}
+        no_roles = {role["role"]: role for role in by_team["NO"]["roles"]}
+        no_wr2 = no_roles["WR2"]
+
+        positive_tags = set(no_wr2["positive_role_tags"])
+        self.assertIn("premium_rookie_wr2_path", positive_tags)
+        self.assertIn("wr1_challenge_watch", positive_tags)
+
+        risk_tags = set(no_wr2["risk_role_tags"])
+        self.assertIn("olave_target_hierarchy", risk_tags)
+        self.assertIn("pass_volume_projection_needs_verification", risk_tags)
+
     def test_validator_passes_on_committed_artifacts(self) -> None:
         result = subprocess.run(
             [sys.executable, str(VALIDATOR_PATH)],
