@@ -1,77 +1,43 @@
-# Role-to-Fantasy Translation (v0)
+# Role-to-Fantasy Translation (Boundary Clarification)
 
-## Purpose
+## Status in current trajectory
 
-Role-and-Opportunity translates offensive roles into fantasy opportunity outputs. In practical terms, this layer answers questions like:
+This document clarifies boundaries under the current TIBER trajectory.
 
-- What does an RB1 role in this offense usually produce?
-- What does a passing-down RB role usually produce?
-- What does a WR2, slot WR, TE1, or move TE role typically return in PPR contexts?
+Historically, this repo described role-to-fantasy translation artifacts. Under the current model, those artifacts should be interpreted as **role/opportunity interpretation support**, not as ownership of scoring/projection truth.
 
-## Ownership boundaries
+## Ownership boundaries (current)
 
-This repository's v0 artifacts follow the TIBER ownership doctrine:
+- **TIBER-Data**: canonical source-backed identity and player-week evidence/provenance spine.
+- **Role-and-opportunity-model**: role/opportunity interpretation, especially receiving-role evidence interpretation.
+- **Point-prediction-model**: fantasy scoring/projection ownership.
+- **TIBER-Fantasy**: user-facing cockpit and product experience.
 
-- **TIBER-Teamstate** owns team context, offensive environment, and play-caller context.
-- **Role-and-Opportunity** owns role value and role-to-fantasy translation.
-- **TIBER-Rookies** owns prospect profile, draft capital, and post-draft interpretation.
-- **TIBER-Data** should eventually own shared cross-repo contracts.
+## Practical meaning for this repo
 
-## v0 characteristics
+This repo may produce interpretation outputs that help explain *why* opportunity looked the way it did, but it should not:
 
-This is a deterministic, inspectable, operator-seeded version:
+- own canonical scoring outputs,
+- claim provenance authority over source evidence,
+- fabricate unsourced route/snap/alignment/red-zone fields.
 
-- No scraping.
-- No external API ingestion.
-- No model training.
-- No scoring-system changes.
-- No precision claims beyond seeded range bands.
+## Relationship to GOBLIN
 
-## Artifacts
+GOBLIN is emerging in TIBER-Data as a research/evidence lane for ugly-output / legitimate-indicator candidates.
 
-### 1) Team role opportunity profiles
+Role-and-opportunity-model can eventually supply interpretation features that help unblock candidate indicators such as:
 
-`data/processed/2026_team_role_opportunity_profiles.json`
+- `high_route_participation_low_output`
+- `snap_share_jump_without_points` (requires sourced snap evidence)
+- `slot_role_without_box_score` (requires sourced alignment evidence)
 
-This file captures team-scoped role interpretations for operator-priority teams, including role descriptions, range placeholders, risk/positive tags, and role stability labels.
+## Data readiness dependencies
 
-Each team profile can also include:
+Higher-confidence translation from role evidence to downstream indicator support depends on governed source-backed availability of:
 
-- `positive_team_context_tags`
-- `risk_team_context_tags`
+- snap share/count data
+- route participation depth and stability data
+- alignment/slot deployment data
+- red-zone and goal-line opportunity data
 
-These fields hold broad environment signals, while `positive_role_tags` and `risk_role_tags` are reserved for role-specific fantasy translation signals (e.g., RB1-specific versus WR2-specific).
-
-### 2) Generic role-to-fantasy baselines
-
-`data/processed/2026_role_to_fantasy_baselines.json`
-
-This file captures player-name-independent role baselines (e.g., RB1, WR2, slot WR, move TE) with expected range bands for touches, targets, routes, red-zone usage, and PPR points.
-
-## Why this matters for Rookies
-
-TIBER-Rookies can consume these artifacts to convert landing spots into role outcomes:
-
-1. Pull team environment assumptions from Teamstate.
-2. Map player to likely offensive role(s).
-3. Translate role to expected fantasy opportunity via these baselines and team role profiles.
-
-## Validation and quality gates
-
-`scripts/validate_role_to_fantasy_profiles.py` validates both artifacts for:
-
-- Required top-level fields.
-- Required baseline roles.
-- Required team and role-level fields.
-- Enum compliance (`expected_red_zone_usage`, `role_stability`, `volatility`).
-- Duplicate role prevention inside a single team profile.
-
-## Forward path (post-v0)
-
-Planned later versions can calibrate seeded ranges with historical projected-versus-actual role outcomes once:
-
-- Shared role labels stabilize across Teamstate, Rookies, and Role-and-Opportunity.
-- Baseline contracts and data handoffs are formalized in TIBER-Data.
-- Historical data quality is sufficient for robust calibration.
-
-ML should be added only after clean role labels and stable baselines exist.
+Until those are source-backed upstream, this repo should preserve null/unknown states rather than invent values.

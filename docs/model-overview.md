@@ -2,31 +2,52 @@
 
 ## Purpose
 
-This repository provides a deterministic TypeScript MVP for evaluating WR and TE role quality, team opportunity environment, and role stability. It is designed to describe how strong and secure a receiving role looks within its offense without projecting fantasy points.
+This repository provides deterministic role/opportunity interpretation for receiving roles (WR/TE focus), positioned as a TIBER interpretation layer rather than a source-of-truth data system.
 
-## MVP Scope
+## Role in TIBER
 
-The current MVP focuses on:
+- **TIBER-Data** owns canonical, source-backed evidence/provenance.
+- **Role-and-opportunity-model** interprets eligible evidence into role/opportunity meaning.
+- **GOBLIN (inside TIBER-Data)** can consume these interpretations as one lane of indicator support.
 
-- Canonical typed role, team, and output interfaces.
-- Deterministic scoring for role value, opportunity quality, role stability, and vacated opportunity.
-- A lightweight archetype classifier for common WR and TE deployment patterns.
-- Seeded scenarios that demonstrate how the model treats alpha roles, slot roles, TE focal points, and uncertain depth-chart rooms.
+## Ownership boundaries
 
-## What It Does Not Do
+This repository owns:
 
-This repository intentionally excludes:
+- role archetype interpretation
+- opportunity-context interpretation
+- deterministic confidence/explanation outputs
 
-- Fantasy point prediction.
-- Machine learning.
-- Scraping, databases, or APIs.
-- Front-end rendering or a service layer.
+This repository does **not** own:
 
-## How To Read The Outputs
+- canonical source truth/provenance
+- fantasy scoring/projection outputs
+- user-facing product cockpit
 
-Each evaluation returns:
+## Inputs and dependency model
 
-- A role archetype label such as `WR1`, `SLOT`, or `TE1`.
-- Four component scores from 0 to 100.
-- A composite role profile score that summarizes the overall signal.
-- Plain-language explanation bullets describing why the profile landed there.
+Preferred inputs are governed artifacts from TIBER-Data, including:
+
+- canonical identity
+- player-week usage evidence
+- player-week scoreboard/PPR evidence (context only)
+
+If a required field is not source-backed and governed, it should be treated as unavailable rather than inferred/fabricated.
+
+## Output intent
+
+Outputs are designed to help:
+
+- role-level analysis
+- opportunity diagnostics
+- future indicator pipelines (including GOBLIN research lanes)
+
+Example future indicator-supporting interpretations include:
+
+- high route participation with low output
+- snap-share jumps without points (when snap evidence is sourced)
+- slot role without box-score delivery (when alignment evidence is sourced)
+
+## Current limitations
+
+Interpretation breadth is constrained by which evidence domains are currently source-backed and available. Route depth, snap granularity, alignment deployment, and red-zone/goal-line opportunity evidence remain key expansion dependencies.
