@@ -4,6 +4,42 @@
 
 This repository exposes a deterministic HTTP API for evaluating WR and TE receiving roles and now emits a canonical **TIBER-Data role-opportunity v1** integration surface. The scoring engine still computes internal role scores, but downstream consumers should integrate with the canonical `roleOpportunityRecord` envelope.
 
+
+## May TIBER-Data alignment
+
+Role-and-opportunity is the player-level role interpretation layer in the TIBER stack. It consumes governed artifacts from TIBER-Data and explains what those inputs imply about a player's opportunity, deployment, role stability, and role quality. It does not own raw source truth, source-backed usage/PPR evidence, roster identity, GOBLIN research truth, play-caller PROE input validation, or Receiving Role Integrity source/proxy truth.
+
+Role-and-opportunity is intentionally distinct from adjacent systems:
+
+- **TIBER-Data** owns governed source/provenance truth, including source-backed weekly usage, source-backed or computed PPR outcomes, roster identity, play-caller PROE scaffold/input validation, GOBLIN research candidates, and Receiving Role Integrity proxy outputs once those proxies are source-backed.
+- **TIBER-Teamstate** owns team-environment interpretation, including how team context, quarterback stability, pace, pass environment, and play-caller signals should be understood before they are applied to players.
+- **Role-and-opportunity** owns player-role interpretation from governed inputs, translating source-backed usage and team-environment context into role labels, opportunity explanations, confidence, and role-quality signals.
+- **GOBLIN** identifies ugly-output, legitimate-signal research candidates. Role-and-opportunity may inspect those candidates as read-only context, but they are not direct scoring inputs by default.
+- **FORGE** grades fantasy signal after player-role and team-environment interpretation are available.
+- **TIBER-Fantasy** is the cockpit that consumes governed and interpreted signals for fantasy workflows.
+
+## System boundary and guardrails
+
+The post-May milestone boundary is:
+
+- **TIBER-Data proves what happened.**
+- **TIBER-Teamstate explains the team environment.**
+- **Role-and-opportunity explains the player role.**
+- **GOBLIN finds ugly-output legitimate-signal candidates.**
+- **FORGE grades fantasy signal.**
+- **TIBER-Fantasy becomes the cockpit.**
+
+Role-and-opportunity must preserve these guardrails:
+
+- Do not fabricate routes, targets, usage, PPR outcomes, roster identity, or source metadata.
+- Do not make proprietary route-data claims.
+- Do not mutate governed TIBER-Data artifacts.
+- Do not treat GOBLIN candidates as direct scoring or ranking inputs unless a future contract explicitly says so.
+- Do not call proxy participation true route participation; Receiving Role Integrity proxy outputs must remain labeled as proxies until source-backed route participation is available.
+- Do not introduce scoring or ranking changes in docs-only alignment updates.
+
+Future TIBER-Data inputs expected by this service include source-backed weekly usage, computed or source-backed PPR outcomes, roster identity, source-backed Receiving Role Integrity proxy outputs, and GOBLIN candidate artifacts for read-only inspection context. Unsupported or unavailable fields should remain null/absent rather than being invented.
+
 ## Internal output vs canonical output
 
 The repo now keeps two layers separate:
