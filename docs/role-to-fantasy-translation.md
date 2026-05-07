@@ -12,10 +12,23 @@ Role-and-Opportunity translates offensive roles into fantasy opportunity outputs
 
 This repository's v0 artifacts follow the TIBER ownership doctrine:
 
-- **TIBER-Teamstate** owns team context, offensive environment, and play-caller context.
-- **Role-and-Opportunity** owns role value and role-to-fantasy translation.
+- **TIBER-Data** owns governed source/provenance truth: source-backed weekly usage, computed or source-backed PPR outcomes, roster identity, play-caller PROE scaffold/input validation, Receiving Role Integrity proxy outputs once source-backed, and GOBLIN research candidates.
+- **TIBER-Teamstate** owns team context, offensive environment, and play-caller interpretation.
+- **Role-and-Opportunity** owns player-level role interpretation and role-to-fantasy translation from governed inputs; it must not own raw source truth or fabricate missing usage/route data.
+- **GOBLIN** owns ugly-output legitimate-signal candidate discovery. Candidate artifacts may be inspected as read-only context here, but they should not directly drive scoring by default.
+- **FORGE** owns fantasy-signal grading.
+- **TIBER-Fantasy** owns the fantasy cockpit experience that consumes these interpreted layers.
 - **TIBER-Rookies** owns prospect profile, draft capital, and post-draft interpretation.
-- **TIBER-Data** should eventually own shared cross-repo contracts.
+
+## Alignment guardrails
+
+Role-to-fantasy artifacts remain interpretive and must respect the post-May data boundary:
+
+- Do not fabricate routes, target totals/shares, usage values, PPR outcomes, roster identity, or source metadata.
+- Do not make proprietary route claims.
+- Do not mutate TIBER-Data artifacts.
+- Do not call Receiving Role Integrity proxy participation true route participation.
+- Do not introduce scoring or ranking changes in docs-only alignment work.
 
 ## v0 characteristics
 
