@@ -12,6 +12,7 @@ export type RoleArchetype =
 export interface PlayerRoleProfile {
   playerId: string;
   playerName: string;
+  teamId?: string;
   position: Position;
   targetShare: number;
   airYardShare: number;

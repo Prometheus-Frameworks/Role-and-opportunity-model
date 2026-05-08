@@ -94,6 +94,7 @@ const PROFILE_STRING_FIELDS: Array<{ sourceField: string; targetField: `profile.
   { sourceField: 'player_id', targetField: 'profile.playerId' },
   { sourceField: 'player_name', targetField: 'profile.playerName' },
   { sourceField: 'position', targetField: 'profile.position' },
+  { sourceField: 'team_id', targetField: 'profile.teamId' },
 ];
 
 const PROFILE_NUMBER_FIELDS: Array<{ sourceField: string; targetField: `profile.${ProfileSchemaField}` }> = [
@@ -152,6 +153,7 @@ const parsePlayerRoleProfile = (payload: unknown): PlayerRoleProfile => {
   const profile: PlayerRoleProfile = {
     playerId: strings['profile.playerId'] ?? '',
     playerName: strings['profile.playerName'] ?? '',
+    teamId: strings['profile.teamId'],
     position: (strings['profile.position'] as PlayerRoleProfile['position'] | undefined) ?? 'WR',
     targetShare: numbers['profile.targetShare'] ?? 0,
     airYardShare: numbers['profile.airYardShare'] ?? 0,
@@ -305,6 +307,104 @@ export class TiberDataClient {
   async getEvaluationInput(lookup: EvaluationLookup): Promise<UpstreamEvaluationInput> {
     const [profile, context] = await Promise.all([this.getPlayerRoleInputs(lookup), this.getTeamContext(lookup)]);
     return { profile, context };
+  }
+
+  /**
+   * Fetch all WR/TE player role profiles for a given season and week.
+   * Returns an empty array if no records exist for the scope.
+   * Fails loudly if the upstream response is malformed.
+   */
+  async getAllPlayerRoleInputs(season: number, week: number): Promise<PlayerRoleProfile[]> {
+    const results = await this.requestCollection(PLAYER_ROLE_PROFILE_PATH, { season, week });
+    const profiles: PlayerRoleProfile[] = [];
+
+    for (const result of results) {
+      try {
+        profiles.push(parsePlayerRoleProfile(result));
+      } catch (error) {
+        if (error instanceof TiberDataError) {
+          // Skip individual invalid records but fail if nothing was parsed
+          continue;
+        }
+        throw error;
+      }
+    }
+
+    return profiles;
+  }
+
+  /**
+   * Fetch all team opportunity contexts for a given season and week.
+   * Returns an empty array if no records exist for the scope.
+   * Fails loudly if the upstream response is malformed.
+   */
+  async getAllTeamContexts(season: number, week: number): Promise<TeamOpportunityContext[]> {
+    const results = await this.requestCollection(TEAM_OPPORTUNITY_CONTEXT_PATH, { season, week });
+    const contexts: TeamOpportunityContext[] = [];
+
+    for (const result of results) {
+      try {
+        contexts.push(parseTeamOpportunityContext(result));
+      } catch (error) {
+        if (error instanceof TiberDataError) {
+          // Skip individual invalid records but fail if nothing was parsed
+          continue;
+        }
+        throw error;
+      }
+    }
+
+    return contexts;
+  }
+
+  /**
+   * Fetch all eligible WR/TE evaluation inputs for a given season and week.
+   * Returns an empty array if no upstream data exists for the scope.
+   * Fails loudly if upstream is unreachable or returns malformed data.
+   *
+   * Note: This method requires TIBER-Data to provide player profiles with
+   * a `team_id` field so players can be paired with their team contexts.
+   */
+  async getAllEvaluationInputs(season: number, week: number): Promise<UpstreamEvaluationInput[]> {
+    const [profiles, contexts] = await Promise.all([
+      this.getAllPlayerRoleInputs(season, week),
+      this.getAllTeamContexts(season, week),
+    ]);
+
+    // Build a map of teamId -> context for efficient lookup
+    const contextByTeam = new Map<string, TeamOpportunityContext>();
+    for (const context of contexts) {
+      contextByTeam.set(context.teamId, context);
+    }
+
+    // Pair each profile with its corresponding team context
+    const inputs: UpstreamEvaluationInput[] = [];
+    const skippedPlayers: string[] = [];
+
+    for (const profile of profiles) {
+      // Find the context by teamId from the player profile
+      if (!profile.teamId) {
+        skippedPlayers.push(profile.playerId);
+        continue;
+      }
+
+      const context = contextByTeam.get(profile.teamId);
+      if (!context) {
+        skippedPlayers.push(profile.playerId);
+        continue;
+      }
+
+      inputs.push({ profile, context });
+    }
+
+    if (skippedPlayers.length > 0 && inputs.length === 0) {
+      throw new TiberDataError(
+        `No valid player-context pairs found. ${skippedPlayers.length} players could not be paired with team contexts.`,
+        { status: 502 },
+      );
+    }
+
+    return inputs;
   }
 }
 
