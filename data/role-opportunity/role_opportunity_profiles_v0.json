@@ -1,0 +1,350 @@
+{
+  "artifact": "role_opportunity_profiles_v0",
+  "generatedAt": "2025-01-01T00:00:00.000Z",
+  "season": 2025,
+  "week": 1,
+  "sourceArtifacts": [
+    "fixture:seeded_scenarios",
+    "deterministic:internal_role_evaluation"
+  ],
+  "profiles": [
+    {
+      "contractVersion": "role_opportunity_profile_v0",
+      "playerId": "wr-crowded-001",
+      "playerName": "Vale Q",
+      "team": "Cinder Wolves",
+      "position": "WR",
+      "season": 2025,
+      "week": 1,
+      "generatedAt": "2025-01-01T00:00:00.000Z",
+      "inputWindow": "season=2025;week=1;fixture=true",
+      "primaryRole": "rotational_receiver",
+      "roleTags": [
+        "rotational",
+        "position:wr",
+        "flag:crowded-target-tree",
+        "flag:environment-volatility"
+      ],
+      "usage": {
+        "snapShare": null,
+        "routeParticipation": 63,
+        "routeParticipationStatus": "proxy",
+        "targetShare": 15,
+        "targetsPerRouteRun": null,
+        "airYardShare": 17,
+        "redZoneTargetShare": null,
+        "firstReadShare": null,
+        "slotRate": null,
+        "wideRate": null,
+        "averageDepthOfTarget": null
+      },
+      "roleQuality": {
+        "roleScore": null,
+        "opportunityScore": null,
+        "stabilityScore": null,
+        "targetEarningScore": null,
+        "deploymentQualityScore": null,
+        "competitionRiskScore": null,
+        "confidenceScore": 34.9,
+        "confidenceTier": "low",
+        "confidenceReasons": [
+          "Vale Q has a less secure receiving role in Cinder Wolves's current ecosystem.",
+          "Competition for targets creates a thinner margin for reliable weekly volume.",
+          "Vale Q profiles as a ROTATIONAL with 15% target share and 63% route participation.",
+          "Cinder Wolves limits role upside because the passing environment and target ecosystem are less supportive."
+        ]
+      },
+      "teamContext": null,
+      "evidence": [
+        {
+          "field": "role_opportunity_record",
+          "source": "role-and-opportunity-model",
+          "sourceType": "model_output",
+          "generatedAt": "2025-01-01T00:00:00.000Z",
+          "notes": "Deterministic canonical role-opportunity record used as adapter input."
+        },
+        {
+          "field": "routeParticipation",
+          "source": "role-and-opportunity-model",
+          "sourceType": "proxy",
+          "generatedAt": "2025-01-01T00:00:00.000Z",
+          "notes": "Route participation is not source-backed in this scaffold export."
+        },
+        {
+          "field": "fixtureScenarioId",
+          "source": "seededScenarios",
+          "sourceType": "derived",
+          "notes": "Fixture scenario: crowded-room"
+        }
+      ],
+      "warnings": [
+        "fixture input is not governed real-player source truth",
+        "route participation is deterministic model output and not source-backed"
+      ],
+      "readiness": {
+        "readyForFantasyInspection": true,
+        "readyForForgeScoring": false,
+        "missingRequiredFields": [
+          "source-backed route participation"
+        ],
+        "blockingWarnings": [
+          "fixture input is not governed real-player source truth",
+          "route participation is deterministic model output and not source-backed"
+        ]
+      }
+    },
+    {
+      "contractVersion": "role_opportunity_profile_v0",
+      "playerId": "wr-slot-001",
+      "playerName": "Harbor Z",
+      "team": "Harbor Hawks",
+      "position": "WR",
+      "season": 2025,
+      "week": 1,
+      "generatedAt": "2025-01-01T00:00:00.000Z",
+      "inputWindow": "season=2025;week=1;fixture=true",
+      "primaryRole": "slot_receiver",
+      "roleTags": [
+        "slot",
+        "position:wr",
+        "flag:stable-role"
+      ],
+      "usage": {
+        "snapShare": null,
+        "routeParticipation": 86,
+        "routeParticipationStatus": "proxy",
+        "targetShare": 23,
+        "targetsPerRouteRun": null,
+        "airYardShare": 19,
+        "redZoneTargetShare": null,
+        "firstReadShare": null,
+        "slotRate": null,
+        "wideRate": null,
+        "averageDepthOfTarget": null
+      },
+      "roleQuality": {
+        "roleScore": null,
+        "opportunityScore": null,
+        "stabilityScore": null,
+        "targetEarningScore": null,
+        "deploymentQualityScore": null,
+        "competitionRiskScore": null,
+        "confidenceScore": 56.3,
+        "confidenceTier": "medium",
+        "confidenceReasons": [
+          "Harbor Z has a less secure receiving role in Harbor Hawks's current ecosystem.",
+          "Harbor Z profiles as a SLOT with 23% target share and 86% route participation.",
+          "Harbor Hawks limits role upside because the passing environment and target ecosystem are less supportive."
+        ]
+      },
+      "teamContext": null,
+      "evidence": [
+        {
+          "field": "role_opportunity_record",
+          "source": "role-and-opportunity-model",
+          "sourceType": "model_output",
+          "generatedAt": "2025-01-01T00:00:00.000Z",
+          "notes": "Deterministic canonical role-opportunity record used as adapter input."
+        },
+        {
+          "field": "routeParticipation",
+          "source": "role-and-opportunity-model",
+          "sourceType": "proxy",
+          "generatedAt": "2025-01-01T00:00:00.000Z",
+          "notes": "Route participation is not source-backed in this scaffold export."
+        },
+        {
+          "field": "fixtureScenarioId",
+          "source": "seededScenarios",
+          "sourceType": "derived",
+          "notes": "Fixture scenario: slot-wr"
+        }
+      ],
+      "warnings": [
+        "fixture input is not governed real-player source truth",
+        "route participation is deterministic model output and not source-backed"
+      ],
+      "readiness": {
+        "readyForFantasyInspection": true,
+        "readyForForgeScoring": false,
+        "missingRequiredFields": [
+          "source-backed route participation"
+        ],
+        "blockingWarnings": [
+          "fixture input is not governed real-player source truth",
+          "route participation is deterministic model output and not source-backed"
+        ]
+      }
+    },
+    {
+      "contractVersion": "role_opportunity_profile_v0",
+      "playerId": "wr-alpha-001",
+      "playerName": "Atlas X",
+      "team": "Metro Meteors",
+      "position": "WR",
+      "season": 2025,
+      "week": 1,
+      "generatedAt": "2025-01-01T00:00:00.000Z",
+      "inputWindow": "season=2025;week=1;fixture=true",
+      "primaryRole": "alpha_receiver",
+      "roleTags": [
+        "wr1",
+        "position:wr",
+        "flag:stable-role",
+        "flag:featured-usage"
+      ],
+      "usage": {
+        "snapShare": null,
+        "routeParticipation": 93,
+        "routeParticipationStatus": "proxy",
+        "targetShare": 31,
+        "targetsPerRouteRun": null,
+        "airYardShare": 38,
+        "redZoneTargetShare": null,
+        "firstReadShare": null,
+        "slotRate": null,
+        "wideRate": null,
+        "averageDepthOfTarget": null
+      },
+      "roleQuality": {
+        "roleScore": null,
+        "opportunityScore": null,
+        "stabilityScore": null,
+        "targetEarningScore": null,
+        "deploymentQualityScore": null,
+        "competitionRiskScore": null,
+        "confidenceScore": 69.5,
+        "confidenceTier": "medium",
+        "confidenceReasons": [
+          "Atlas X looks dependable with a solid role profile and enough weekly stability to trust.",
+          "Atlas X profiles as a WR1 with 31% target share and 93% route participation.",
+          "Metro Meteors offers a favorable passing environment through neutral pass rate, red-zone usage, and quarterback continuity."
+        ]
+      },
+      "teamContext": null,
+      "evidence": [
+        {
+          "field": "role_opportunity_record",
+          "source": "role-and-opportunity-model",
+          "sourceType": "model_output",
+          "generatedAt": "2025-01-01T00:00:00.000Z",
+          "notes": "Deterministic canonical role-opportunity record used as adapter input."
+        },
+        {
+          "field": "routeParticipation",
+          "source": "role-and-opportunity-model",
+          "sourceType": "proxy",
+          "generatedAt": "2025-01-01T00:00:00.000Z",
+          "notes": "Route participation is not source-backed in this scaffold export."
+        },
+        {
+          "field": "fixtureScenarioId",
+          "source": "seededScenarios",
+          "sourceType": "derived",
+          "notes": "Fixture scenario: alpha-wr"
+        }
+      ],
+      "warnings": [
+        "fixture input is not governed real-player source truth",
+        "route participation is deterministic model output and not source-backed"
+      ],
+      "readiness": {
+        "readyForFantasyInspection": true,
+        "readyForForgeScoring": false,
+        "missingRequiredFields": [
+          "source-backed route participation"
+        ],
+        "blockingWarnings": [
+          "fixture input is not governed real-player source truth",
+          "route participation is deterministic model output and not source-backed"
+        ]
+      }
+    },
+    {
+      "contractVersion": "role_opportunity_profile_v0",
+      "playerId": "te-primary-001",
+      "playerName": "Summit Y",
+      "team": "Summit Stallions",
+      "position": "TE",
+      "season": 2025,
+      "week": 1,
+      "generatedAt": "2025-01-01T00:00:00.000Z",
+      "inputWindow": "season=2025;week=1;fixture=true",
+      "primaryRole": "primary_tight_end",
+      "roleTags": [
+        "te1",
+        "position:te",
+        "flag:stable-role",
+        "flag:featured-usage"
+      ],
+      "usage": {
+        "snapShare": null,
+        "routeParticipation": 82,
+        "routeParticipationStatus": "proxy",
+        "targetShare": 24,
+        "targetsPerRouteRun": null,
+        "airYardShare": 23,
+        "redZoneTargetShare": null,
+        "firstReadShare": null,
+        "slotRate": null,
+        "wideRate": null,
+        "averageDepthOfTarget": null,
+        "inlineRate": null,
+        "detachedRate": null
+      },
+      "roleQuality": {
+        "roleScore": null,
+        "opportunityScore": null,
+        "stabilityScore": null,
+        "targetEarningScore": null,
+        "deploymentQualityScore": null,
+        "competitionRiskScore": null,
+        "confidenceScore": 63.7,
+        "confidenceTier": "medium",
+        "confidenceReasons": [
+          "Summit Y has a less secure receiving role in Summit Stallions's current ecosystem.",
+          "Summit Y profiles as a TE1 with 24% target share and 82% route participation.",
+          "Summit Stallions limits role upside because the passing environment and target ecosystem are less supportive."
+        ]
+      },
+      "teamContext": null,
+      "evidence": [
+        {
+          "field": "role_opportunity_record",
+          "source": "role-and-opportunity-model",
+          "sourceType": "model_output",
+          "generatedAt": "2025-01-01T00:00:00.000Z",
+          "notes": "Deterministic canonical role-opportunity record used as adapter input."
+        },
+        {
+          "field": "routeParticipation",
+          "source": "role-and-opportunity-model",
+          "sourceType": "proxy",
+          "generatedAt": "2025-01-01T00:00:00.000Z",
+          "notes": "Route participation is not source-backed in this scaffold export."
+        },
+        {
+          "field": "fixtureScenarioId",
+          "source": "seededScenarios",
+          "sourceType": "derived",
+          "notes": "Fixture scenario: te-primary"
+        }
+      ],
+      "warnings": [
+        "fixture input is not governed real-player source truth",
+        "route participation is deterministic model output and not source-backed"
+      ],
+      "readiness": {
+        "readyForFantasyInspection": true,
+        "readyForForgeScoring": false,
+        "missingRequiredFields": [
+          "source-backed route participation"
+        ],
+        "blockingWarnings": [
+          "fixture input is not governed real-player source truth",
+          "route participation is deterministic model output and not source-backed"
+        ]
+      }
+    }
+  ]
+}

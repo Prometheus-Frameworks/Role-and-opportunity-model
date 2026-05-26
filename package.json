@@ -8,7 +8,8 @@
     "dev": "node src/server.ts",
     "start": "node src/server.ts",
     "test": "node --test tests/**/*.test.ts",
-    "export:role-opportunity-lab": "node src/scripts/exportRoleOpportunityLab.ts"
+    "export:role-opportunity-lab": "node src/scripts/exportRoleOpportunityLab.ts",
+    "export:role-opportunity-profiles-v0": "node src/scripts/exportRoleOpportunityProfilesV0.ts"
   },
   "keywords": [
     "typescript",
