@@ -3,7 +3,53 @@ import assert from 'node:assert/strict';
 import { mkdtemp, readFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
+import { toRoleOpportunityProfileV0 } from '../src/adapters/toRoleOpportunityProfileV0.ts';
 import { buildRoleOpportunityProfileArtifactV0, exportRoleOpportunityProfilesV0Artifact } from '../src/services/roleOpportunityProfileExportService.ts';
+import type { RoleOpportunityRecord } from '../src/types/roleOpportunity.ts';
+
+const buildBaseRecord = (position: RoleOpportunityRecord['position']): RoleOpportunityRecord => ({
+  playerId: `test-${position.toLowerCase()}-001`,
+  playerName: `${position} Player`,
+  team: 'Test Team',
+  position,
+  season: 2025,
+  week: 1,
+  primaryRole: 'rotational_receiver',
+  roleTags: [`position:${position.toLowerCase()}`],
+  usage: {
+    snapShare: 75,
+    routeParticipation: 80,
+    targetShare: 18,
+    airYardShare: 21,
+    carryShare: null,
+    rushAttemptShare: null,
+    redZoneTouchShare: 15,
+    inside10TouchShare: null,
+    inside5TouchShare: null,
+    goalLineCarryShare: null,
+    teamOpportunityShare: null,
+    snaps: null,
+    routesRun: null,
+    targets: null,
+    carries: null,
+    redZoneTouches: null,
+    inside10Touches: null,
+    inside5Touches: null,
+    goalLineCarries: null,
+  },
+  confidence: {
+    score: 72,
+    tier: 'medium',
+    reasons: ['Fixture test confidence reason.'],
+  },
+  source: {
+    model: 'role-and-opportunity-model',
+    modelVersion: '0.1.0',
+    generatedAt: '2025-01-01T00:00:00.000Z',
+    inputWindow: 'season=2025;week=1;fixture=true',
+    notes: [],
+  },
+});
 
 test('builds role_opportunity_profiles_v0 artifact with WR/TE profiles and fixture readiness guardrails', () => {
   const artifact = buildRoleOpportunityProfileArtifactV0({
@@ -55,4 +101,24 @@ test('exports role_opportunity_profiles_v0 artifact to a governed path without c
   assert.ok(artifact.sourceArtifacts.includes('fixture:seeded_scenarios'));
   assert.ok(Array.isArray(artifact.profiles));
   assert.ok(artifact.profiles.every((profile: { readiness: { readyForForgeScoring: boolean } }) => profile.readiness.readyForForgeScoring === false));
+});
+
+test('adapter fails closed for RB and QB positions', () => {
+  assert.throws(
+    () =>
+      toRoleOpportunityProfileV0({
+        record: buildBaseRecord('RB'),
+        sourceArtifacts: ['fixture:test'],
+      }),
+    /Unsupported role-opportunity position.*RB.*Supported positions are WR and TE\./,
+  );
+
+  assert.throws(
+    () =>
+      toRoleOpportunityProfileV0({
+        record: buildBaseRecord('QB'),
+        sourceArtifacts: ['fixture:test'],
+      }),
+    /Unsupported role-opportunity position.*QB.*Supported positions are WR and TE\./,
+  );
 });

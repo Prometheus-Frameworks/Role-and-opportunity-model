@@ -18,6 +18,16 @@ const defaultFixtureWarnings = [
   'route participation is deterministic model output and not source-backed',
 ];
 
+const toSupportedPosition = (position: RoleOpportunityRecord['position']) => {
+  if (position === 'WR' || position === 'TE') {
+    return position;
+  }
+
+  throw new Error(
+    `Unsupported role-opportunity position for RoleOpportunityProfileV0 adapter: ${position}. Supported positions are WR and TE.`,
+  );
+};
+
 export const toRoleOpportunityProfileV0 = (input: {
   record: RoleOpportunityRecord;
   sourceArtifacts: string[];
@@ -61,7 +71,7 @@ export const toRoleOpportunityProfileV0 = (input: {
     playerId: input.record.playerId,
     playerName: input.record.playerName,
     team: input.record.team,
-    position: input.record.position === 'TE' ? 'TE' : 'WR',
+    position: toSupportedPosition(input.record.position),
     season: input.record.season,
     week: input.record.week,
     generatedAt,
