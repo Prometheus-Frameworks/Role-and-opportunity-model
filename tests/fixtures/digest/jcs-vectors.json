@@ -1,0 +1,62 @@
+[
+  {
+    "id": "object-order",
+    "json": "{\"z\":1,\"a\":{\"2\":\"two\",\"10\":\"ten\",\"a\":false}}",
+    "canonical": "{\"a\":{\"10\":\"ten\",\"2\":\"two\",\"a\":false},\"z\":1}"
+  },
+  {
+    "id": "unicode-utf16",
+    "json": "{\"\\ue000\":\"bmp\",\"\\ud800\\udc00\":\"astral\",\"a\":\"\u00e9 e\\u0301 \ud83d\ude00\"}",
+    "canonical": "{\"a\":\"\u00e9 e\u0301 \ud83d\ude00\",\"\ud800\udc00\":\"astral\",\"\ue000\":\"bmp\"}"
+  },
+  {
+    "id": "unicode-escaping",
+    "json": "[\"\\u00e9\",\"\u00e9\",\"\\n\",\"\\u000f\",\"\\\\\",\"\\\"\",\"/\"]",
+    "canonical": "[\"\u00e9\",\"\u00e9\",\"\\n\",\"\\u000f\",\"\\\\\",\"\\\"\",\"/\"]"
+  },
+  {
+    "id": "numeric-boundaries",
+    "json": "[-0,0,1e-7,1e-6,1e20,1e21,9007199254740991,5e-324,1.7976931348623157e308,333333333.33333329]",
+    "canonical": "[0,0,1e-7,0.000001,100000000000000000000,1e+21,9007199254740991,5e-324,1.7976931348623157e+308,333333333.3333333]"
+  },
+  {
+    "id": "array-order",
+    "json": "[3,{\"z\":2,\"a\":1},null,true]",
+    "canonical": "[3,{\"a\":1,\"z\":2},null,true]"
+  },
+  {
+    "id": "decoded-duplicate",
+    "json": "{\"a\":1,\"\\u0061\":2}",
+    "reject": true
+  },
+  {
+    "id": "nested-duplicate",
+    "json": "{\"x\":[{\"a\":1,\"a\":2}]}",
+    "reject": true
+  },
+  {
+    "id": "lone-high-surrogate",
+    "json": "\"\\ud800\"",
+    "reject": true
+  },
+  {
+    "id": "lone-low-surrogate",
+    "json": "\"\\udfff\"",
+    "reject": true
+  },
+  {
+    "id": "infinite-number",
+    "json": "1e400",
+    "reject": true
+  },
+  {
+    "id": "invalid-number",
+    "json": "01",
+    "reject": true
+  },
+  {
+    "id": "trailing-comma",
+    "json": "[1,]",
+    "reject": true
+  }
+]
