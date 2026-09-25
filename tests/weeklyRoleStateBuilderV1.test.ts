@@ -172,6 +172,46 @@ function resealHandoff(input: BuildInput) {
   ]);
   resealCompanion(input,c => { c.handoff = structuredClone(h.artifact); c.verification.basis = h.mode === 'candidate' ? 'retained_reviewed_pins' : 'synthetic_pins'; });
 }
+test('review P1: resealed evidence artifact cannot diverge from the pinned candidate bytes', () => {
+  const { input } = setup();
+  input.handoff.evidence.forEach(e => { e.artifact.sha256 = 'a'.repeat(64); e.artifact.revision = 'a'.repeat(64); });
+  resealHandoff(input);
+  assert.throws(() => state(input), /evidence artifact\/candidate support pin mismatch/);
+});
+test('review P1: altered candidate pin cannot authenticate unchanged evidence, even with resealed companion', () => {
+  const { input } = setup(); resealCompanion(input,c => {
+    const candidate = c.binding.pins.find((pin:any) => pin.path === c.binding.paths.candidate);
+    candidate.sha256 = 'a'.repeat(64);
+    c.verification.verifiedFiles = c.binding.pins.map((pin:any) => ({ ...pin, digestProfile:'raw-bytes-sha256-v1' }));
+  });
+  assert.throws(() => state(input), /evidence artifact\/candidate support pin mismatch/);
+});
+test('review P2: malformed, duplicate or missing candidate support pins fail closed', () => {
+  for (const mutate of [
+    (c:any) => { c.binding.pins = [{}]; },
+    (c:any) => { c.binding.pins[0].size = 0; },
+    (c:any) => { c.binding.pins[0].sha256 = 'not-a-digest'; },
+    (c:any) => { c.binding.pins.push({ ...c.binding.pins[0] }); },
+    (c:any) => { c.binding.pins = c.binding.pins.filter((p:any) => p.path !== c.binding.paths.candidate); },
+  ]) {
+    const { input } = setup(); resealCompanion(input,c => {
+      mutate(c);
+      c.verification.verifiedFiles = c.binding.pins.map((pin:any) => ({ ...pin, digestProfile:'raw-bytes-sha256-v1' }));
+    });
+    assert.throws(() => state(input), /invalid or duplicated retained support pin|candidate support pin required/);
+  }
+});
+test('review P2: admission or publication in outer or inner source envelope fails closed', () => {
+  for (const mutate of [
+    (c:any) => { c.sourceEnvelope.consumer_admitted = true; },
+    (c:any) => { c.sourceEnvelope.status = 'published'; },
+    (c:any) => { c.sourceEnvelope.candidate.consumer_admitted = true; },
+    (c:any) => { c.sourceEnvelope.candidate.status = 'published'; },
+  ]) {
+    const { input } = setup(); resealCompanion(input,mutate);
+    assert.throws(() => state(input), /noncandidate or admitted source envelope/);
+  }
+});
 test('fictional source-shaped candidate carries an explicit accepted ROP purpose; TTS-only purpose stays pending', () => {
   const { input } = setup();
   input.handoff.mode = 'candidate'; input.handoff.evidence.forEach(e => { if (e.kind === 'fixture') e.kind = 'source'; });

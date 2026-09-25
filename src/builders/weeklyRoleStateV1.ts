@@ -47,10 +47,25 @@ function boundCompanion(h: Handoff, input: BuildInput): Obj {
   fail(v.sourceAdmission === 'none' && v.consumerActivation === 'none' && v.externalProviderAuthentication === 'not_claimed', 'companion admission/verification mismatch');
   const basis = h.mode === 'synthetic' ? 'synthetic_pins' : 'retained_reviewed_pins';
   fail(v.basis === basis, 'companion qualification basis mismatch');
-  const pins = array(object(c.binding, 'companion binding required').pins, 'support pins required');
-  fail(pins.length > 0 && equal(v.verifiedFiles, pins.map(pin => ({ ...object(pin, 'support pin'), digestProfile: RAW_PROFILE }))), 'retained support-pin declaration mismatch');
+  const binding = object(c.binding, 'companion binding required');
+  const pins = array(binding.pins, 'support pins required');
+  const paths = new Set<string>();
+  fail(pins.length > 0 && pins.every(entry => {
+    const support = object(entry, 'support pin');
+    if (typeof support.path !== 'string' || !support.path.trim() || paths.has(support.path) ||
+      !Number.isSafeInteger(support.size) || support.size <= 0 || !/^[a-f0-9]{64}$/.test(support.sha256)) return false;
+    paths.add(support.path); return true;
+  }), 'invalid or duplicated retained support pin');
+  fail(equal(v.verifiedFiles, pins.map(entry => ({ ...object(entry, 'support pin'), digestProfile: RAW_PROFILE }))), 'retained support-pin declaration mismatch');
+  const candidatePath = object(binding.paths, 'binding paths required').candidate;
+  fail(typeof candidatePath === 'string' && paths.has(candidatePath), 'candidate support pin required');
+  const candidatePin = pins.map(entry => object(entry, 'support pin')).find(entry => entry.path === candidatePath)!;
+  const candidateArtifact: ArtifactRef = { artifactId: `data:${candidatePath}`, revision: candidatePin.sha256,
+    sha256: candidatePin.sha256, artifactType: 'evidence_file', digestProfile: RAW_PROFILE, generatedAt: binding.candidateGeneratedAt };
+  fail(validateArtifactReference(candidateArtifact).length === 0 && h.evidence.every(e => equal(e.artifact, candidateArtifact)), 'evidence artifact/candidate support pin mismatch');
   const envelope = object(c.sourceEnvelope, 'source envelope required'), candidate = object(envelope.candidate, 'candidate required');
-  fail(candidate.schema_version === 'weekly_boxscore_candidate_v0' && candidate.consumer_admitted === false, 'noncandidate or admitted source envelope');
+  fail(envelope.schema_version === 'weekly_boxscore_publication_candidate_v0' && envelope.status === 'candidate_needs_review' && envelope.consumer_admitted === false &&
+    candidate.schema_version === 'weekly_boxscore_candidate_v0' && candidate.status === 'candidate_needs_review' && candidate.consumer_admitted === false, 'noncandidate or admitted source envelope');
   fail(candidate.scope?.season === h.scope.season && candidate.scope?.season_type === h.scope.seasonType && candidate.scope?.week === h.scope.week, 'candidate scope mismatch');
   const native = array(c.sourceNativeRows, 'native source rows required'), source = [...array(candidate.players, 'identified source rows required'), ...array(candidate.unattributed_source_observations, 'unattributed source rows required')].map(x => object(x, 'source row'));
   const rows = h.teams.flatMap(t => t.rows), evidenceById = new Map(h.evidence.map(e => [e.id, e]));
