@@ -3,10 +3,12 @@ import { canonicalizeJcs, parseJcsJson, rawByteSha256, contractContentSha256, CO
 import type { ArtifactRef, Counts, Field, Evidence, PlayerTeamAllocationHandoffV1 as Handoff } from '../contracts/weeklyRoleStateV1.ts';
 import { validateAllocationHandoffV1 } from '../validation/weeklyRoleStateV1.ts';
 import { RETAINED_WEEK1_BINDING } from './retainedWeek1Binding.ts';
+import { RETAINED_WEEK2_BINDING } from './retainedWeek2Binding.ts';
 
 export type RawPin = { path: string; size: number; sha256: string };
 export type OfflineBinding = {
   sourceSupportCommit: string; candidateGeneratedAt: string; generationEvidence: string;
+  generationWitness?: { path: string; dataBase: string };
   games: readonly string[]; paths: Record<'candidate' | 'player' | 'team' | 'schedule' | 'sourceReceipt' | 'scheduleReceipt' | 'sourceLicense' | 'scheduleLicense' | 'publisher' | 'builder', string>;
   pins: readonly RawPin[];
 };
@@ -20,7 +22,8 @@ const str = (v: Json | undefined): string => { must(typeof v === 'string', 'expe
 const same = (a: unknown, b: unknown, label: string): void => must(canonicalizeJcs(a) === canonicalizeJcs(b), label);
 const clone = <T>(v: T): T => structuredClone(v);
 const utf8 = (v: unknown): Uint8Array => new TextEncoder().encode(JSON.stringify(v));
-const scope = { season: 2026, season_type: 'REG', week: 1 };
+export type ReviewedAllocationScope = { season: 2026; seasonType: 'REG'; week: 1 | 2 };
+const week1: ReviewedAllocationScope = { season: 2026, seasonType: 'REG', week: 1 };
 const core = { carries: 'carries', targets: 'targets', receptions: 'receptions', passAttempts: 'attempts' } as const;
 const fields = Object.keys(core) as Field[];
 const signed = new Set(['passing_yards', 'rushing_yards', 'receiving_yards', 'receiving_air_yards', 'receiving_yards_after_catch']);
@@ -73,18 +76,28 @@ export type AllocationAdapterResult = {
   companionBytes: Uint8Array;
 };
 
-/** Only this fixed binding can produce candidate/source evidence. No refresh or caller-supplied source pins. */
+/** Closed retained binding selection. No caller pins, current pointers, discovery, or provider I/O. */
+export function adaptReviewedAllocation(bytes: ReadonlyMap<string, Uint8Array>, output: OutputIdentity, selection: ReviewedAllocationScope): AllocationAdapterResult {
+  must(selection !== null && typeof selection === 'object' && (selection.week === 1 || selection.week === 2), 'unreviewed scope');
+  same(selection, { season: 2026, seasonType: 'REG', week: selection.week }, 'unreviewed scope');
+  return adapt(bytes, selection.week === 1 ? RETAINED_WEEK1_BINDING : RETAINED_WEEK2_BINDING, output, 'candidate', selection);
+}
+/** Backward-compatible exact Week 1 entry; its binding and output representation are unchanged. */
 export function adaptRetainedWeek1(bytes: ReadonlyMap<string, Uint8Array>, output: OutputIdentity): AllocationAdapterResult {
-  return adapt(bytes, RETAINED_WEEK1_BINDING, output, 'candidate');
+  return adaptReviewedAllocation(bytes, output, week1);
 }
 /** Test/import seam: caller pins can ONLY produce fixture evidence and synthetic mode. */
-export function adaptSyntheticAllocation(bytes: ReadonlyMap<string, Uint8Array>, binding: OfflineBinding, output: OutputIdentity): AllocationAdapterResult {
-  return adapt(bytes, binding, output, 'synthetic');
+export function adaptSyntheticAllocation(bytes: ReadonlyMap<string, Uint8Array>, binding: OfflineBinding, output: OutputIdentity, selection: ReviewedAllocationScope = week1): AllocationAdapterResult {
+  must(selection !== null && typeof selection === 'object' && (selection.week === 1 || selection.week === 2), 'unsupported synthetic scope');
+  same(selection, { season: 2026, seasonType: 'REG', week: selection.week }, 'unsupported synthetic scope');
+  return adapt(bytes, binding, output, 'synthetic', selection);
 }
-function adapt(input: ReadonlyMap<string, Uint8Array>, suppliedBinding: OfflineBinding, output: OutputIdentity, mode: Handoff['mode']): AllocationAdapterResult {
+function adapt(input: ReadonlyMap<string, Uint8Array>, suppliedBinding: OfflineBinding, output: OutputIdentity, mode: Handoff['mode'], selection: ReviewedAllocationScope): AllocationAdapterResult {
+  const scope = { season: selection.season, season_type: selection.seasonType, week: selection.week };
   const binding = clone(suppliedBinding), bytes = new Map<string, Uint8Array>();
   must(new Set(binding.pins.map(p => p.path)).size === binding.pins.length, 'duplicate pins');
   for (const pin of binding.pins) {
+    must(typeof pin.path === 'string' && pin.path.trim().length > 0 && Number.isSafeInteger(pin.size) && pin.size > 0 && /^[0-9a-f]{64}$/.test(pin.sha256), 'invalid support pin');
     const supplied = input.get(pin.path); must(supplied, `missing retained bytes ${pin.path}`);
     const copy = new Uint8Array(supplied!);
     must(copy.length === pin.size && rawByteSha256(copy) === pin.sha256, `raw-byte pin mismatch ${pin.path}`); bytes.set(pin.path, copy);
@@ -94,7 +107,15 @@ function adapt(input: ReadonlyMap<string, Uint8Array>, suppliedBinding: OfflineB
   const p = binding.paths, envelope = read(p.candidate), c = obj(envelope.candidate), receipt = read(p.sourceReceipt), scheduleReceipt = read(p.scheduleReceipt);
   must(envelope.schema_version === 'weekly_boxscore_publication_candidate_v0' && c.schema_version === 'weekly_boxscore_candidate_v0', 'unsupported candidate version');
   must(envelope.status === 'candidate_needs_review' && c.status === 'candidate_needs_review' && envelope.consumer_admitted === false && c.consumer_admitted === false, 'candidate lifecycle/admission mismatch');
-  same(c.scope, scope, 'only 2026 REG Week 1'); same(receipt.requested_scope, scope, 'receipt scope');
+  same(c.scope, scope, 'selected scope mismatch'); same(receipt.requested_scope, scope, 'receipt scope');
+  if (binding.generationWitness) {
+    const witness = read(binding.generationWitness.path), result = obj(witness.result);
+    same(binding.generationEvidence, `${binding.generationWitness.path}#build_completed_at`, 'generation witness locator');
+    must(witness.base === binding.generationWitness.dataBase && witness.support_commit === binding.sourceSupportCommit, 'generation witness revisions');
+    must(result.sha256 === rawByteSha256(get(p.candidate)) && result.status === 'candidate_revision_written', 'generation witness candidate');
+    must(utc(witness.build_completed_at) === binding.candidateGeneratedAt && compareArtifactClocks(utc(witness.build_started_at), binding.candidateGeneratedAt) <= 0, 'generation witness clock');
+    must(witness.source_admission === false && witness.rop_purpose_acceptance === false && witness.evidence_cutoff === null && witness.finality === 'unknown', 'generation witness eligibility');
+  }
   same(c.source_receipt, receipt, 'embedded source receipt mismatch');
   same(envelope.schedule_receipt, { ...scheduleReceipt, source_support_commit: binding.sourceSupportCommit }, 'embedded schedule receipt mismatch');
   must(c.source_support_commit === binding.sourceSupportCommit, 'support commit mismatch');
@@ -115,7 +136,7 @@ function adapt(input: ReadonlyMap<string, Uint8Array>, suppliedBinding: OfflineB
   const root: ArtifactRef = { ...output, sha256: '0'.repeat(64), artifactType: 'player_team_allocation_handoff_v1', digestProfile: CONTENT_PROFILE };
   must(!validateArtifactReference(sourceRef).length && !validateArtifactReference(root).length && compareArtifactClocks(sourceRef.generatedAt, root.generatedAt) <= 0, 'artifact chronology/identity');
   const rawPlayers = readSourceCsv(get(p.player)), rawTeams = readSourceCsv(get(p.team)), schedule = readSourceCsv(get(p.schedule));
-  const inScope = (r: Record<string, string>, seasonType = 'season_type') => r.season === '2026' && r.week === '1' && r[seasonType] === 'REG';
+  const inScope = (r: Record<string, string>, seasonType = 'season_type') => r.season === String(scope.season) && r.week === String(scope.week) && r[seasonType] === scope.season_type;
   const games = schedule.filter(r => inScope(r, 'game_type')).map(r => ({ gameId: r.game_id, homeTeam: r.home_team, awayTeam: r.away_team })).sort((a, b) => a.gameId.localeCompare(b.gameId));
   same(games.map(g => g.gameId), [...binding.games].sort(), 'schedule game set');
   must(games.every(g => g.homeTeam && g.awayTeam && g.homeTeam !== g.awayTeam), 'invalid schedule teams');
@@ -202,7 +223,7 @@ function adapt(input: ReadonlyMap<string, Uint8Array>, suppliedBinding: OfflineB
     return { gameId: str(identity.game_id), team: str(identity.team), opponent: str(identity.opponent_team), totals: counts(observed, teamEvidence), rows, population: { status: fields.every(f => states[f] === 'reconciled') ? 'complete' : 'incomplete', evidence: populationEvidence, unallocated: residual, reconciliation: states } };
   });
   must(mappedTeams.reduce((n, t) => n + t.rows.length, 0) === population.length, 'orphan or multiply allocated source rows');
-  const handoff: Handoff = { contractVersion: 'player_team_allocation_handoff_v1', artifact: root, supersedes: null, mode, scope: { season: 2026, seasonType: 'REG', week: 1 }, games: games.filter(g => gameIds.includes(g.gameId)), expectedGameIds: [...binding.games], coverage: missing.length ? 'partial' : 'complete', finality: 'unknown', correction: 'open', evidenceCutoff: null, generatedAt: output.generatedAt, definitions: { carries: 'Data credited carries, all positions including QB; no designed-run inference.', targets: 'Data credited targets; denominator is credited team targets, not pass attempts.', receptions: 'Data credited receptions; not targets or touches.', passAttempts: 'Data credited attempts; not dropbacks or starter participation.' }, purpose: { status: 'pending', purposes: [], evidence: [] }, evidence, teams: mappedTeams };
+  const handoff: Handoff = { contractVersion: 'player_team_allocation_handoff_v1', artifact: root, supersedes: null, mode, scope: { ...selection }, games: games.filter(g => gameIds.includes(g.gameId)), expectedGameIds: [...binding.games], coverage: missing.length ? 'partial' : 'complete', finality: 'unknown', correction: 'open', evidenceCutoff: null, generatedAt: output.generatedAt, definitions: { carries: 'Data credited carries, all positions including QB; no designed-run inference.', targets: 'Data credited targets; denominator is credited team targets, not pass attempts.', receptions: 'Data credited receptions; not targets or touches.', passAttempts: 'Data credited attempts; not dropbacks or starter participation.' }, purpose: { status: 'pending', purposes: [], evidence: [] }, evidence, teams: mappedTeams };
   const validation = validateAllocationHandoffV1(handoff); must(validation.valid, validation.errors.join('; '));
   root.sha256 = contractContentSha256(utf8(handoff), [{ artifact: root, dependencies: [sourceRef] }, { artifact: sourceRef, dependencies: [] }]);
   const companion: AllocationAdapterResult['companion'] = { format: 'rop_allocation_bridge_companion_v1', handoff: clone(root), use: 'interface_qualification_only', sourceEnvelope: clone(envelope), sourceNativeRows: nativeRows, binding, verification: { basis: mode === 'candidate' ? 'retained_reviewed_pins' : 'synthetic_pins', verifiedFiles: binding.pins.map(pin => ({ ...pin, digestProfile: RAW_PROFILE })), externalProviderAuthentication: 'not_claimed', sourceAdmission: 'none', consumerActivation: 'none' } };
