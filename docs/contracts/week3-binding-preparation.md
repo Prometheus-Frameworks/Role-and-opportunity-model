@@ -25,14 +25,23 @@ The selected candidate's original generation witness was not established in the 
 
 The full exact retained input manifest/member authentication and adapter-consumable review receipt also remain to be bound. No #277 raw candidate was supplied to this adapter or authenticated here. A missing witness must not be replaced with September 29's different candidate or a newly invented original build time. Any later replay, replacement witness semantics, or contract adjustment must be explicitly proposed and reviewed, not silently performed by this preparation.
 
-## Focused checks
+## Focused checks and exact coverage correction
 
-- Before changes: `node --experimental-strip-types --test tests/*.test.ts` — 212/212 pass.
-- After changes: same command — 225/225 pass, all synthetic.
-- Strict TypeScript check of changed adapter and added tests passes using installed TypeScript/Node types; no dependency installed. The baseline adapter also passes.
-- Existing Week 1/2 binding bytes and all original tests remain unchanged. New checks cover synthetic scope, lossless companion, pending purpose, null/unresolved population, Data share operands, admission rejection, altered/missing bytes, wrong-week substitution and missing generation witness.
+The implementer worked in a restored partial snapshot, not a complete checkout. Local results were **212/212 before** and **225/225 after**, including the 13 new Week 3 tests. Those counts apply ONLY to the explicit restored files below, not the repository-wide `tests/*.test.ts` selection.
 
-These are implementer checks, not independent review or real-output acceptance. No full application suite or real Week 1/2/3 producer was run.
+Reproducible restricted command (run from the repository root):
+
+```sh
+node --experimental-strip-types --test tests/artifactDigestV1.test.ts tests/weeklyAllocationFromDataV1.test.ts tests/weeklyAllocationWeek2.test.ts tests/weeklyRoleStateBuilderV1.test.ts tests/weeklyRoleStateV1.test.ts tests/weeklyRoleStateV1AggregateGraph.test.ts tests/weeklyRoleStateV1Repairs.test.ts
+```
+
+That seven-file subset passed 212 tests locally before this change. Add `tests/weeklyAllocationWeek3Preparation.test.ts` to that explicit command for the eight-file subset; it passed 225 tests locally after this change. Both explicit-file commands were rerun and passed after the review finding. No test file is removed or excluded from the repository by this coverage description.
+
+**Independent review P2 `4145971912`:** at canonical first head `26e1f9f96dced04ec43ac46f42c5bd350872348b`, the reviewer reports that the complete `tests/*.test.ts` selection passes **256 tests**, and the same checkout without the new Week 3 test file passes **243**. These are reviewer-reported complete-checkout results, not implementer runs or a claim that the exact parent tree was separately executed. The original document incorrectly presented the partial-snapshot counts as the unqualified glob command outcome. This documentation-only repair separates the two scopes; no code or tests changed.
+
+Strict TypeScript checks of the changed adapter and added test file pass using the implementer's installed TypeScript/Node types; no dependency was installed. The baseline adapter also passed. Existing Week 1/2 binding bytes and all original tests remain unchanged. New checks cover synthetic scope, lossless companion, pending purpose, null/unresolved population, Data share operands, admission rejection, altered/missing bytes, wrong-week substitution and missing generation witness.
+
+No real Week 1/2/3 producer was run. The implementer did not run a full application suite. All reported tests are synthetic; code review and test success are not source or real-output acceptance. Fresh exact-head review is requested for this documentation repair.
 
 ## Next boundary
 
