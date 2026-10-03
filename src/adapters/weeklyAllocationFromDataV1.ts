@@ -23,6 +23,8 @@ const same = (a: unknown, b: unknown, label: string): void => must(canonicalizeJ
 const clone = <T>(v: T): T => structuredClone(v);
 const utf8 = (v: unknown): Uint8Array => new TextEncoder().encode(JSON.stringify(v));
 export type ReviewedAllocationScope = { season: 2026; seasonType: 'REG'; week: 1 | 2 };
+/** Week 3 is fixture-only until its exact retained evidence binding is qualified. */
+export type SyntheticAllocationScope = { season: 2026; seasonType: 'REG'; week: 1 | 2 | 3 };
 const week1: ReviewedAllocationScope = { season: 2026, seasonType: 'REG', week: 1 };
 const core = { carries: 'carries', targets: 'targets', receptions: 'receptions', passAttempts: 'attempts' } as const;
 const fields = Object.keys(core) as Field[];
@@ -87,12 +89,12 @@ export function adaptRetainedWeek1(bytes: ReadonlyMap<string, Uint8Array>, outpu
   return adaptReviewedAllocation(bytes, output, week1);
 }
 /** Test/import seam: caller pins can ONLY produce fixture evidence and synthetic mode. */
-export function adaptSyntheticAllocation(bytes: ReadonlyMap<string, Uint8Array>, binding: OfflineBinding, output: OutputIdentity, selection: ReviewedAllocationScope = week1): AllocationAdapterResult {
-  must(selection !== null && typeof selection === 'object' && (selection.week === 1 || selection.week === 2), 'unsupported synthetic scope');
+export function adaptSyntheticAllocation(bytes: ReadonlyMap<string, Uint8Array>, binding: OfflineBinding, output: OutputIdentity, selection: SyntheticAllocationScope = week1): AllocationAdapterResult {
+  must(selection !== null && typeof selection === 'object' && (selection.week === 1 || selection.week === 2 || selection.week === 3), 'unsupported synthetic scope');
   same(selection, { season: 2026, seasonType: 'REG', week: selection.week }, 'unsupported synthetic scope');
   return adapt(bytes, binding, output, 'synthetic', selection);
 }
-function adapt(input: ReadonlyMap<string, Uint8Array>, suppliedBinding: OfflineBinding, output: OutputIdentity, mode: Handoff['mode'], selection: ReviewedAllocationScope): AllocationAdapterResult {
+function adapt(input: ReadonlyMap<string, Uint8Array>, suppliedBinding: OfflineBinding, output: OutputIdentity, mode: Handoff['mode'], selection: SyntheticAllocationScope): AllocationAdapterResult {
   const scope = { season: selection.season, season_type: selection.seasonType, week: selection.week };
   const binding = clone(suppliedBinding), bytes = new Map<string, Uint8Array>();
   must(new Set(binding.pins.map(p => p.path)).size === binding.pins.length, 'duplicate pins');
