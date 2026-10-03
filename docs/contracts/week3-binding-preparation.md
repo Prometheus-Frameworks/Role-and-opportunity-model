@@ -27,21 +27,17 @@ The full exact retained input manifest/member authentication and adapter-consuma
 
 ## Focused checks and exact coverage correction
 
-The implementer worked in a restored partial snapshot, not a complete checkout. Local results were **212/212 before** and **225/225 after**, including the 13 new Week 3 tests. Those counts apply ONLY to the explicit restored files below, not the repository-wide `tests/*.test.ts` selection.
+October 3 blocker repair was performed in a **complete checkout of canonical head `345a368c56368024cf78fce7fed549c6ba0072a1`**. The prior partial-snapshot counts of 212/225 are historical local observations only and are not reproducible counts for the committed files. Both independent findings `4145971912` and `4146079084` remain preserved.
 
-Reproducible restricted command (run from the repository root):
+The seven-file command below passed **216/216**, and adding `tests/weeklyAllocationWeek3Preparation.test.ts` passed **229/229**. These are new implementer executions in the complete checkout, matching the second review's restricted-suite counts. No exact-parent test run is claimed.
 
 ```sh
 node --experimental-strip-types --test tests/artifactDigestV1.test.ts tests/weeklyAllocationFromDataV1.test.ts tests/weeklyAllocationWeek2.test.ts tests/weeklyRoleStateBuilderV1.test.ts tests/weeklyRoleStateV1.test.ts tests/weeklyRoleStateV1AggregateGraph.test.ts tests/weeklyRoleStateV1Repairs.test.ts
 ```
 
-That seven-file subset passed 212 tests locally before this change. Add `tests/weeklyAllocationWeek3Preparation.test.ts` to that explicit command for the eight-file subset; it passed 225 tests locally after this change. Both explicit-file commands were rerun and passed after the review finding. No test file is removed or excluded from the repository by this coverage description.
+The earlier reviewer reported complete-checkout glob totals of 243 without the new file and 256 with it. Those remain attributed historical reviewer results. The October 3 complete glob command `node --experimental-strip-types --test tests/*.test.ts` also passed **256/256** in this checkout. No tests or code were changed by this count correction.
 
-**Independent review P2 `4145971912`:** at canonical first head `26e1f9f96dced04ec43ac46f42c5bd350872348b`, the reviewer reports that the complete `tests/*.test.ts` selection passes **256 tests**, and the same checkout without the new Week 3 test file passes **243**. These are reviewer-reported complete-checkout results, not implementer runs or a claim that the exact parent tree was separately executed. The original document incorrectly presented the partial-snapshot counts as the unqualified glob command outcome. This documentation-only repair separates the two scopes; no code or tests changed.
-
-Strict TypeScript checks of the changed adapter and added test file pass using the implementer's installed TypeScript/Node types; no dependency was installed. The baseline adapter also passed. Existing Week 1/2 binding bytes and all original tests remain unchanged. New checks cover synthetic scope, lossless companion, pending purpose, null/unresolved population, Data share operands, admission rejection, altered/missing bytes, wrong-week substitution and missing generation witness.
-
-No real Week 1/2/3 producer was run. The implementer did not run a full application suite. All reported tests are synthetic; code review and test success are not source or real-output acceptance. Fresh exact-head review is requested for this documentation repair.
+All restricted-suite checks are synthetic. No real Week 1/2/3 adapter or Role State producer was invoked, and no source or purpose acceptance is inferred. The first preparation's TypeScript checks remain historical implementer results, not fresh October 3 compilation. Independent exact-head review of this documentation correction is required before treating the prior P2 as closed.
 
 ## Next boundary
 
