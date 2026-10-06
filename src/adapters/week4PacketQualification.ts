@@ -1,6 +1,6 @@
 /** Closed packet preparation. No provider access, receipt creation or acceptance application. */
 import { createHash } from 'node:crypto';
-import { isDeepStrictEqual } from 'node:util';
+import { canonicalizeJcs } from '../contracts/artifactDigestV1.ts';
 import { WEEK4_PACKET as B } from './week4PacketBinding.ts';
 
 export const week4Digest = (bytes: Uint8Array): string => createHash('sha256').update(bytes).digest('hex');
@@ -10,7 +10,9 @@ export function week4Object(value: unknown): Record<string, any> {
 }
 export const week4Parse = (bytes: Uint8Array) => week4Object(JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes)));
 function equal(actual: unknown, expected: unknown, label: string): void {
-  if (!isDeepStrictEqual(actual, expected)) throw new Error(`Week 4 ${label} mismatch`);
+  // The strict decoder deliberately uses null-prototype objects. Compare JSON
+  // contents, including every key/value, rather than parser object prototypes.
+  if (canonicalizeJcs(actual) !== canonicalizeJcs(expected)) throw new Error(`Week 4 ${label} mismatch`);
 }
 export function week4ClockMicros(value: string): bigint {
   if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?Z$/.test(value) ||

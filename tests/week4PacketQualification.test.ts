@@ -2,6 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { WEEK4_PACKET as B } from '../src/adapters/week4PacketBinding.ts';
+import { parseJcsJson } from '../src/contracts/artifactDigestV1.ts';
 import { authenticateWeek4Evidence as authenticate, assertWeek4EvidenceSemantics as assertSemantics, assertWeek4EmbeddedReceipts as assertEmbedded, week4Pin as pin, week4ClockMicros as clock } from '../src/adapters/week4PacketQualification.ts';
 const bytes = (value: unknown) => new TextEncoder().encode(JSON.stringify(value));
 function semanticFixture(): any {
@@ -16,6 +17,13 @@ test('closed 16-member inventory is frozen and separates reviewed packet from la
 });
 test('synthetic metadata verification returns no artifact or acceptance and preserves inputs', () => {
  const f=semanticFixture(), before=structuredClone(f); assert.equal(assertSemantics(f), undefined); assert.deepEqual(f,before);
+});
+test('strict JSON parser representation preserves exact Week 4 metadata semantics', () => {
+ const f=parseJcsJson(bytes(semanticFixture())) as any;
+ assert.equal(Object.getPrototypeOf(f.buildWitness),null);
+ assert.equal(assertSemantics(f),undefined);
+ f.inventory.members[0].sha256='0'.repeat(64);
+ assert.throws(()=>assertSemantics(f),/complete inventory members/);
 });
 for (const [label,mutate] of [
  ['build generation',(f: any)=>f.buildWitness.build_completed_at='2026-01-01T00:00:00Z'],
@@ -44,6 +52,12 @@ function embeddedFixture(): any {
 }
 test('embedded receipt comparison preserves structural property-order independence', () => {
  const f=embeddedFixture();f.envelope.candidate.source_receipt={nested:{beta:2,alpha:1},fixture_only:true};assertEmbedded(f);
+});
+test('strict JSON parser representation preserves embedded receipt checks',()=>{
+ const f=parseJcsJson(bytes(embeddedFixture())) as any;
+ assert.equal(assertEmbedded(f),undefined);
+ f.envelope.candidate.source_receipt.nested.alpha=2;
+ assert.throws(()=>assertEmbedded(f),/embedded source receipt/);
 });
 for(const [label,mutate] of [
  ['source',(f: any)=>f.envelope.candidate.source_receipt.nested.alpha=2],['schedule',(f: any)=>f.envelope.schedule_receipt.extra=true],
