@@ -1,5 +1,7 @@
 # Role and Opportunity Model
 
+> **[TIBER Now — what works, what we’re building, and what’s still conceptual](https://github.com/Prometheus-Frameworks/TIBER-Fantasy/blob/main/docs/TIBER_NOW.md)**
+
 ## What this service does
 
 This repository exposes a deterministic HTTP API for evaluating WR and TE receiving roles and now emits a canonical **TIBER-Data role-opportunity v1** integration surface. The scoring engine still computes internal role scores, but downstream consumers should integrate with the canonical `roleOpportunityRecord` envelope.
