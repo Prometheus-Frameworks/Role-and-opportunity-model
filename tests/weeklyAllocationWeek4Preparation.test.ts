@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import { adaptReviewedAllocation, adaptSyntheticAllocation, readSourceCsv, type SyntheticAllocationScope } from '../src/adapters/weeklyAllocationFromDataV1.ts';
 import { adaptRetainedWeek4, allocationEvidenceIdentity } from '../src/adapters/weeklyAllocationFromDataV1.ts';
 import { RETAINED_WEEK4_BINDING } from '../src/adapters/retainedWeek4Binding.ts';
+import { buildWeeklyRoleStateV1 } from '../src/builders/weeklyRoleStateV1.ts';
+import { rawByteSha256, contractContentSha256, contractReferences, artifactKey, RAW_PROFILE } from '../src/contracts/artifactDigestV1.ts';
 import { fixture, output } from './fixtures/allocationFromDataV1.ts';
 const selection: SyntheticAllocationScope = { season: 2026, seasonType: 'REG', week: 4 };
 
@@ -48,4 +50,24 @@ test('closed Week 4 source entry rejects all caller bindings and empty bytes',()
  const changed=structuredClone(RETAINED_WEEK4_BINDING);changed.candidateGeneratedAt='2026-01-01T00:00:00Z';
  assert.throws(()=>allocationEvidenceIdentity(changed,{},selection),/closed Week 4 binding/);
  assert.throws(()=>allocationEvidenceIdentity(RETAINED_WEEK4_BINDING,{},selection),/missing evidence record/);
+});
+/** Fictional resealing attack: a checksum and a claimed candidate mode are not a Week 4 qualification. */
+function resealedCandidate(accepted: boolean, marker: boolean) {
+ const a=adapt(week4()),h=a.handoff;h.mode='candidate';
+ h.evidence.forEach(e=>{if(e.kind==='fixture')e.kind='source';});
+ if(accepted)h.purpose={status:'accepted',purposes:['rop_observed_role'],evidence:['team:0']};
+ const refs=contractReferences(Object.fromEntries(Object.entries(h).filter(([key])=>key!=='artifact')));
+ const dedup=new Map(refs.map(ref=>[artifactKey(ref),ref]));h.artifact.sha256='0'.repeat(64);
+ h.artifact.sha256=contractContentSha256(new TextEncoder().encode(JSON.stringify(h)),[{artifact:h.artifact,dependencies:[...dedup.values()]},...[...dedup.values()].map(artifact=>({artifact,dependencies:[]}))]);
+ const companion=JSON.parse(new TextDecoder().decode(a.companionBytes));companion.handoff=structuredClone(h.artifact);
+ companion.verification.basis='retained_reviewed_pins';if(marker)companion.binding.candidateWitness=structuredClone(RETAINED_WEEK4_BINDING.candidateWitness);
+ const companionBytes=new TextEncoder().encode(JSON.stringify(companion));
+ return {handoff:h,companionBytes,companionPin:{digestProfile:RAW_PROFILE,size:companionBytes.length,sha256:rawByteSha256(companionBytes)},subject:{namespace:'nflverse:gsis',playerId:'00-0000001'},artifact:{artifactId:'fictional-only:w4-regression',revision:'1',generatedAt:'2026-09-24T12:00:01Z'}};
+}
+test('candidate Week 4 cannot omit closed witness under pending or accepted purpose',()=>{
+ for(const accepted of [false,true])assert.throws(()=>buildWeeklyRoleStateV1(resealedCandidate(accepted,false)),/closed Week 4 candidate witness required/);
+});
+test('candidate Week 4 cannot claim accepted purpose by adding the optional marker',()=>{
+ assert.throws(()=>buildWeeklyRoleStateV1(resealedCandidate(true,true)),/Week 4 preparation purpose must remain pending/);
+ assert.throws(()=>buildWeeklyRoleStateV1(resealedCandidate(false,true)),/closed Week 4 binding required/);
 });
