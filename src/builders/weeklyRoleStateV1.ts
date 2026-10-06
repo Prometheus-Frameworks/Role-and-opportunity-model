@@ -60,8 +60,13 @@ function boundCompanion(h: Handoff, input: BuildInput): Obj {
   fail(equal(v.verifiedFiles, pins.map(entry => ({ ...object(entry, 'support pin'), digestProfile: RAW_PROFILE }))), 'retained support-pin declaration mismatch');
   const candidatePath = object(binding.paths, 'binding paths required').candidate;
   fail(typeof candidatePath === 'string' && paths.has(candidatePath), 'candidate support pin required');
+  if (h.mode === 'candidate' && h.scope.season === 2026 && h.scope.seasonType === 'REG' && h.scope.week === 4) {
+    fail(binding.candidateWitness, 'closed Week 4 candidate witness required');
+    fail(h.purpose.status === 'pending', 'Week 4 preparation purpose must remain pending');
+  }
   const identity = allocationEvidenceIdentity(binding as OfflineBinding, c.evidenceRecords ?? {}, h.scope);
   fail(!identity.qualifiedAt || compareArtifactClocks(h.generatedAt, identity.qualifiedAt) >= 0, 'handoff predates replay review');
+  fail(!binding.candidateWitness || h.purpose.status === 'pending', 'Week 4 preparation purpose must remain pending');
   const receiptIds = new Set(h.purpose.evidence);
   fail(!binding.replayWitness || h.purpose.status !== 'accepted' || binding.purposeReceipt, 'replay purpose receipt required');
   if (binding.purposeReceipt && h.purpose.status === 'accepted') {

@@ -46,7 +46,7 @@ test('Week 3 remains rejected at real source entry even with fixture binding/acc
   }
 });
 test('extra selectors, wrong season/type and future weeks remain rejected', () => {
-  for (const scope of [{ ...selection, week: 4 }, { ...selection, season: 2025 }, { ...selection, seasonType: 'POST' }, { ...selection, pins: [] }]) {
+  for (const scope of [{ ...selection, week: 5 }, { ...selection, season: 2025 }, { ...selection, seasonType: 'POST' }, { ...selection, pins: [] }]) {
     assert.throws(() => adaptSyntheticAllocation(week3().bytes, week3().binding, output, scope as any), /unsupported synthetic scope/);
   }
 });
