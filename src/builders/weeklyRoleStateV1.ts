@@ -62,6 +62,7 @@ function boundCompanion(h: Handoff, input: BuildInput): Obj {
   fail(typeof candidatePath === 'string' && paths.has(candidatePath), 'candidate support pin required');
   const identity = allocationEvidenceIdentity(binding as OfflineBinding, c.evidenceRecords ?? {}, h.scope);
   fail(!identity.qualifiedAt || compareArtifactClocks(h.generatedAt, identity.qualifiedAt) >= 0, 'handoff predates replay review');
+  fail(!binding.candidateWitness || h.purpose.status === 'pending', 'Week 4 preparation purpose must remain pending');
   const receiptIds = new Set(h.purpose.evidence);
   fail(!binding.replayWitness || h.purpose.status !== 'accepted' || binding.purposeReceipt, 'replay purpose receipt required');
   if (binding.purposeReceipt && h.purpose.status === 'accepted') {

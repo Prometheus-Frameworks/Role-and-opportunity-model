@@ -4,6 +4,9 @@ import type { ArtifactRef, Counts, Field, Evidence, PlayerTeamAllocationHandoffV
 import { validateAllocationHandoffV1 } from '../validation/weeklyRoleStateV1.ts';
 import { RETAINED_WEEK1_BINDING } from './retainedWeek1Binding.ts';
 import { RETAINED_WEEK2_BINDING } from './retainedWeek2Binding.ts';
+import { RETAINED_WEEK4_BINDING } from './retainedWeek4Binding.ts';
+import { WEEK4_PACKET } from './week4PacketBinding.ts';
+import { authenticateWeek4Evidence, assertWeek4EvidenceSemantics } from './week4PacketQualification.ts';
 
 export type RawPin = { path: string; size: number; sha256: string };
 export type OfflineBinding = {
@@ -13,6 +16,8 @@ export type OfflineBinding = {
   /** Prepared external receipt only. Loading it does not apply acceptance. */
   purposeReceipt?: { path: string };
   generationWitness?: { path: string; dataBase: string };
+  /** Independently reviewed new Week 4 build, distinct from the Week 3 replay lane. */
+  candidateWitness?: { path: string; inventoryPath: string; reviewPath: string };
   games: readonly string[]; paths: Record<'candidate' | 'player' | 'team' | 'schedule' | 'sourceReceipt' | 'scheduleReceipt' | 'sourceLicense' | 'scheduleLicense' | 'publisher' | 'builder', string>;
   pins: readonly RawPin[];
 };
@@ -27,8 +32,8 @@ const same = (a: unknown, b: unknown, label: string): void => must(canonicalizeJ
 const clone = <T>(v: T): T => structuredClone(v);
 const utf8 = (v: unknown): Uint8Array => new TextEncoder().encode(JSON.stringify(v));
 export type ReviewedAllocationScope = { season: 2026; seasonType: 'REG'; week: 1 | 2 };
-/** Week 3 is fixture-only until its exact retained evidence binding is qualified. */
-export type SyntheticAllocationScope = { season: 2026; seasonType: 'REG'; week: 1 | 2 | 3 };
+/** Weeks 3/4 use fixtures at this seam; real Week 4 has its own closed entry. */
+export type SyntheticAllocationScope = { season: 2026; seasonType: 'REG'; week: 1 | 2 | 3 | 4 };
 const week1: ReviewedAllocationScope = { season: 2026, seasonType: 'REG', week: 1 };
 const core = { carries: 'carries', targets: 'targets', receptions: 'receptions', passAttempts: 'attempts' } as const;
 const fields = Object.keys(core) as Field[];
@@ -113,6 +118,16 @@ export function allocationEvidenceIdentity(binding: OfflineBinding, records: Rea
     qualifiedAt = utc(audit.fresh_independent_replay_completed_at);
     identity = `data-replay:${w.path}:${binding.paths.candidate}`;
   }
+  if (binding.candidateWitness) {
+    must(scope.season === 2026 && scope.seasonType === 'REG' && scope.week === 4, 'new candidate witness scope');
+    same(binding, RETAINED_WEEK4_BINDING, 'closed Week 4 binding required');
+    must(!binding.replayWitness && !binding.generationWitness && !binding.purposeReceipt, 'Week 4 preparation cannot apply receipt or replay');
+    const w = binding.candidateWitness;
+    assertWeek4EvidenceSemantics({ buildWitness: record(w.path), inventory: record(w.inventoryPath), review: record(w.reviewPath) });
+    same(binding.generationEvidence, `${w.path}#build_completed_at`, 'new candidate generation locator');
+    same(binding.candidateGeneratedAt, WEEK4_PACKET.candidateGeneratedAt, 'new candidate generation clock');
+    qualifiedAt = WEEK4_PACKET.qualifiedAt;
+  }
   const source: ArtifactRef = { artifactId: identity, revision: candidate.sha256, sha256: candidate.sha256, artifactType: 'evidence_file', digestProfile: RAW_PROFILE, generatedAt: generatedAt as string };
   must(!validateArtifactReference(source).length, 'invalid evidence generation identity');
   if (!binding.purposeReceipt) return { source, ...(qualifiedAt ? { qualifiedAt } : {}) };
@@ -146,13 +161,18 @@ export function adaptReviewedAllocation(bytes: ReadonlyMap<string, Uint8Array>, 
   same(selection, { season: 2026, seasonType: 'REG', week: selection.week }, 'unreviewed scope');
   return adapt(bytes, selection.week === 1 ? RETAINED_WEEK1_BINDING : RETAINED_WEEK2_BINDING, output, 'candidate', selection);
 }
+/** Closed Week 4 qualification only. Real bytes need a separate execution decision; purpose stays pending. */
+export function adaptRetainedWeek4(bytes: ReadonlyMap<string, Uint8Array>, output: OutputIdentity): AllocationAdapterResult {
+  const owned = authenticateWeek4Evidence(bytes);
+  return adapt(owned, RETAINED_WEEK4_BINDING, output, 'candidate', { season: 2026, seasonType: 'REG', week: 4 });
+}
 /** Backward-compatible exact Week 1 entry; its binding and output representation are unchanged. */
 export function adaptRetainedWeek1(bytes: ReadonlyMap<string, Uint8Array>, output: OutputIdentity): AllocationAdapterResult {
   return adaptReviewedAllocation(bytes, output, week1);
 }
 /** Test/import seam: caller pins can ONLY produce fixture evidence and synthetic mode. */
 export function adaptSyntheticAllocation(bytes: ReadonlyMap<string, Uint8Array>, binding: OfflineBinding, output: OutputIdentity, selection: SyntheticAllocationScope = week1): AllocationAdapterResult {
-  must(selection !== null && typeof selection === 'object' && (selection.week === 1 || selection.week === 2 || selection.week === 3), 'unsupported synthetic scope');
+  must(selection !== null && typeof selection === 'object' && (selection.week === 1 || selection.week === 2 || selection.week === 3 || selection.week === 4), 'unsupported synthetic scope');
   same(selection, { season: 2026, seasonType: 'REG', week: selection.week }, 'unsupported synthetic scope');
   return adapt(bytes, binding, output, 'synthetic', selection);
 }
@@ -173,7 +193,7 @@ function adapt(input: ReadonlyMap<string, Uint8Array>, suppliedBinding: OfflineB
   must(envelope.status === 'candidate_needs_review' && c.status === 'candidate_needs_review' && envelope.consumer_admitted === false && c.consumer_admitted === false, 'candidate lifecycle/admission mismatch');
   same(c.scope, scope, 'selected scope mismatch'); same(receipt.requested_scope, scope, 'receipt scope');
   const evidenceRecords: Record<string, string> = {};
-  for (const path of [binding.replayWitness?.path, binding.replayWitness?.manifestPath, binding.replayWitness?.reviewPath, binding.purposeReceipt?.path])
+  for (const path of [binding.replayWitness?.path, binding.replayWitness?.manifestPath, binding.replayWitness?.reviewPath, binding.purposeReceipt?.path, binding.candidateWitness?.path, binding.candidateWitness?.inventoryPath, binding.candidateWitness?.reviewPath])
     if (path) evidenceRecords[path] = new TextDecoder('utf-8', { fatal: true }).decode(get(path));
   const identity = allocationEvidenceIdentity(binding, evidenceRecords, selection), generation = identity.source.generatedAt;
   if (binding.generationWitness) {
