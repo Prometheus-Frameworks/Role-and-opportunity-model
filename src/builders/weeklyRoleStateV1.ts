@@ -94,7 +94,7 @@ function boundCompanion(h: Handoff, input: BuildInput): Obj {
     fail(equal(n.dataDerived, resolved ? raw!.derived : null), 'Data-derived object differs from source envelope');
   }
   fail(nativeCsv.size === sourceByCsv.size, 'incomplete native source population');
-  fail(h.teams.every(t => [...fields.flatMap(f => t.totals[f].evidence), ...t.population.evidence, ...t.rows.flatMap(r => [...r.identity.evidence, ...r.positionEvidence, ...fields.flatMap(f => r.counts[f].evidence)])].every(id => !binding.purposeReceipt || !receiptIds.has(id))), 'purpose receipt cannot support observations');
+  fail(h.teams.every(t => [...fields.flatMap(f => t.totals[f].evidence), ...t.population.evidence, ...fields.flatMap(f => t.population.unallocated[f].evidence), ...t.rows.flatMap(r => [...r.identity.evidence, ...r.positionEvidence, ...fields.flatMap(f => r.counts[f].evidence)])].every(id => !binding.purposeReceipt || !receiptIds.has(id))), 'purpose receipt cannot support observations');
   const teams = array(candidate.teams, 'source teams required').map(x => object(x, 'source team'));
   fail(teams.length === h.teams.length, 'team population mismatch');
   for (const t of h.teams) {
@@ -152,7 +152,7 @@ function claim(id: ClaimId, row: TeamAllocation['rows'][number], t: TeamAllocati
     status = !qualifiedRoom(t) ? 'insufficient' : id === 'led_qualified_rb_room_carries'
       ? n! > 0 && n === top && rb.filter(r => r.counts.carries.value === top).length === 1 ? 'supported' : 'not_supported'
       : total > 0 && n! / total > 0.5 ? 'supported' : 'not_supported';
-    needed = unique([...t.population.evidence, ...t.rows.flatMap(r => [...r.counts.carries.evidence, ...r.positionEvidence, ...r.identity.evidence])]);
+    needed = unique([...t.population.evidence, ...fields.flatMap(f => t.population.unallocated[f].evidence), ...t.rows.flatMap(r => [...r.counts.carries.evidence, ...r.positionEvidence, ...r.identity.evidence])]);
   }
   if (row.identity.status !== 'resolved') status = 'insufficient';
   return { id, ruleVersion: '1', status, support: status === 'supported' ? unique(needed) : [], counterevidence: status === 'not_supported' ? unique(needed) : [], gaps: status === 'insufficient' ? [row.identity.status !== 'resolved' ? 'unresolved_identity' : room ? 'qualified_rb_room_unavailable' : `${row.rowId}.${field}`] : [] };
@@ -193,7 +193,7 @@ export function buildWeeklyRoleStateV1(injected: BuildInput): BuildResult {
       if (r.position === 'RB') {
         const qualified = qualifiedRoom(t), total = qualified ? t.rows.filter(row => row.position === 'RB').reduce((sum, row) => sum + row.counts.carries.value!, 0) : null;
         const d: Count = { value: total, status: total === null ? 'missing' : 'observed', reason: total === null ? 'unqualified_room' : null, evidence: t.population.evidence };
-        branch = { position: 'RB', carryShare: carry, targetShare: target, rbRoomCarryShare: share(r.counts.carries, d, qualified, 'player_carries/qualified_RB_carries', [...t.population.evidence, ...t.rows.flatMap(row => [...row.counts.carries.evidence, ...row.positionEvidence, ...row.identity.evidence])]) };
+        branch = { position: 'RB', carryShare: carry, targetShare: target, rbRoomCarryShare: share(r.counts.carries, d, qualified, 'player_carries/qualified_RB_carries', [...t.population.evidence, ...fields.flatMap(f => t.population.unallocated[f].evidence), ...t.rows.flatMap(row => [...row.counts.carries.evidence, ...row.positionEvidence, ...row.identity.evidence])]) };
       } else branch = { position: r.position as 'WR' | 'TE', carryShare: carry, targetShare: target };
     }
     const ids: ClaimId[] = r.position === 'QB' ? ['recorded_qb_passing_work', 'recorded_qb_rushing_work']

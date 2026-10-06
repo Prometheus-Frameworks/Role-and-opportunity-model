@@ -386,3 +386,10 @@ test('replay handoff cannot predate the completed independent review',()=>{
   input.handoff.evidence.filter(e=>e.kind==='derived').forEach(e=>{e.generatedAt=input.handoff.generatedAt;});resealHandoff(input);
   assert.throws(()=>state(input),/predates replay review/);
 });
+
+test('independent P2: receipt cannot replace residual population evidence after resealing',()=>{
+  for(const field of ['carries','targets','receptions','passAttempts'] as const) {
+    const {input}=withReceipt();input.handoff.teams[0].population.unallocated[field].evidence=['purpose:receipt'];resealHandoff(input);
+    assert.throws(()=>state(input),/purpose receipt cannot support observations/);
+  }
+});
