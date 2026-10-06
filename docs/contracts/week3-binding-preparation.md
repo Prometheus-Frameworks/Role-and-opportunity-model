@@ -42,3 +42,59 @@ All restricted-suite checks are synthetic. No real Week 1/2/3 adapter or Role St
 ## Next boundary
 
 Recover the exact missing generation/support/review witnesses, complete a separately reviewed real Week 3 retained binding, and return a purpose-specific provisional-use decision plus explicit bounded execution scope. The continuity cohort and Research #24 supplement remain separate; no additional subjects or older baseline runs are implied. No output, comparison, source admission, Forecast use, consumer activation, scheduler or public football report follows from this PR.
+
+## October 6 bounded replay/receipt guard extension
+
+Joe's live scope now includes the builder guard and focused builder regressions alongside
+adapter preparation. The October 5 blocker in comment `5994622165` is addressed by
+separating the original candidate from a fresh materialization. Original W1/W2 paths,
+frozen retained bindings and representations remain unchanged.
+
+The optional `OfflineBinding.replayWitness` names three distinct pinned records: the
+build receipt, member manifest and independent review. Its base, selected Data head and
+reviewed head are explicit identities. `candidateGeneratedAt` must be **null** in this
+lane; the original clock remains unknown. Evidence identity becomes
+`data-replay:<build-receipt-path>:<candidate-path>` with the candidate raw-byte digest
+and the build receipt's completed clock. This identifies the newly materialized evidence
+bytes rather than attributing a clock to their original publication. The separate build,
+manifest and review remain raw-byte pinned in the mandatory companion; their original
+records are not modified. Pending labels in the original build/manifest are historical;
+the separately pinned clean review must bind the candidate and selected/reviewed heads.
+The handoff cannot predate the review's completed replay.
+
+The adapter authenticates all supplied input pins and the additional record bytes. The
+builder reauthenticates those record strings against the companion's support pins and
+cross-checks witness eligibility, manifest members, review identity and chronology before
+accepting the evidence identity. It still relies on prior adapter qualification for raw
+source rows; no external provider authentication is claimed. Complete population, source
+row lineage, Data share objects, eligibility, handoff JCS digest and companion raw digest
+checks remain in force. No shared contract or validator changed.
+
+A future optional `purposeReceipt.path` prepares a **separate** raw-byte-pinned artifact,
+`operator-receipt:<path>`. Its proposed external record has schema version
+`rop_provisional_purpose_receipt_v1`, status `accepted`, exact handoff `scope`, exact
+`evidence_artifact`, nonempty unique `purposes` restricted to the existing two contract
+purposes, and `accepted_at`. It must declare `source_admission`, `execution_authorized`
+and `consumer_activation` false. Its clock cannot predate replay/review completion.
+This is an interface, not an operator signature or an authority-discovery mechanism;
+the qualified caller must independently establish the receipt's operator authority.
+**No such real receipt was created or applied in this change.** The adapter continues
+to emit pending purpose, including when a prepared receipt is supplied. For a separately
+accepted replay handoff, the builder requires exactly one receipt evidence leaf at `/`,
+matching that artifact and clock, with no parents and exactly matching purpose values.
+It cannot substitute for observation/population evidence. Synthetic mode cannot accept
+purpose. The existing W1/W2 guard behavior is preserved.
+
+Fresh implementer validation: the original exact tree's 256 synthetic tests passed;
+the extended complete suite passes 282/282. Focused adapter/W1/W2/W3/builder selection
+passes 143/143. A direct old/new preservation comparison found byte-identical W1/W2
+handoffs, complete companion bytes/pins and all four positional branch state/binding
+outputs using fictional fixtures. Retained W1/W2 binding files are untouched. No real
+W1/W2/W3 adapter or producer was run. Strict TypeScript compilation was unavailable
+because this environment has no installed TypeScript compiler; no compiler pass is claimed.
+Fresh independent exact-head review is still required; implementer checks do not supply it.
+
+This change deliberately leaves `adaptReviewedAllocation` closed to real W3 input.
+A concrete retained W3 binding, independently qualified purpose receipt and separately
+authorized execution remain subsequent gates. There is no source admission, cohort
+expansion, Forecast work, consumer activation, deployment or schedule. Keep PR #30 unmerged.
