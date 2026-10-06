@@ -8,6 +8,24 @@ import { fixture, output } from './fixtures/allocationFromDataV1.ts';
 const adapt = (f = fixture(), identity = output) => adaptSyntheticAllocation(f.bytes, f.binding, identity);
 const rejects = (edit: (f: ReturnType<typeof fixture>) => void, match?: RegExp) => { const f = fixture(); edit(f); f.rebind(); if (match) assert.throws(() => adapt(f), match); else assert.throws(() => adapt(f)); };
 
+test('schedule membership uses the same lexical order for team-code prefixes', () => {
+  const f=fixture(), observed='2026_01_AAA_BBB', additional='2026_01_AAAC_DDD';
+  const csv='game_id,season,game_type,week,home_team,away_team\n'+observed+',2026,REG,1,BBB,AAA\n'+additional+',2026,REG,1,DDD,AAAC\n';
+  f.put('games.csv',csv);f.binding.games=[observed,additional];
+  f.candidate.coverage.scheduled_game_ids=[observed,additional].sort();
+  f.candidate.coverage.missing_game_ids=[additional];f.candidate.coverage.schedule_coverage='partial_or_conflicting';
+  Object.assign(f.candidate.schedule_receipt,f.rawPin('games.csv'));
+  const receipt={...f.candidate.schedule_receipt};delete receipt.source_support_commit;
+  f.put('schedule.json',receipt);f.rebind();
+  const result=adapt(f);
+  assert.equal(result.handoff.coverage,'partial');
+  assert.deepEqual(result.handoff.expectedGameIds,[observed,additional]);
+  assert.deepEqual(result.handoff.games.map(g=>g.gameId),[observed]);
+  // Ordering repair must not turn mismatched membership into an accepted packet.
+  f.binding.games=[observed,'2026_01_AAAC_EEE'];
+  assert.throws(()=>adapt(f),/schedule game set/);
+});
+
 test('full source population, all positions, unattributed zero, Data shares and immutable envelope retained', () => {
   const f = fixture(), r = adapt(f), all = r.handoff.teams.flatMap(t => t.rows);
   assert.equal(all.length, 6); assert.equal(all.filter(r => r.identity.status === 'unresolved').length, 1);

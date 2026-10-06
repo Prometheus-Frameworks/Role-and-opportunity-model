@@ -225,7 +225,9 @@ function adapt(input: ReadonlyMap<string, Uint8Array>, suppliedBinding: OfflineB
   must(!validateArtifactReference(sourceRef).length && !validateArtifactReference(root).length && compareArtifactClocks(sourceRef.generatedAt, root.generatedAt) <= 0 && (!identity.qualifiedAt || compareArtifactClocks(identity.qualifiedAt, root.generatedAt) <= 0), 'artifact chronology/identity');
   const rawPlayers = readSourceCsv(get(p.player)), rawTeams = readSourceCsv(get(p.team)), schedule = readSourceCsv(get(p.schedule));
   const inScope = (r: Record<string, string>, seasonType = 'season_type') => r.season === String(scope.season) && r.week === String(scope.week) && r[seasonType] === scope.season_type;
-  const games = schedule.filter(r => inScope(r, 'game_type')).map(r => ({ gameId: r.game_id, homeTeam: r.home_team, awayTeam: r.away_team })).sort((a, b) => a.gameId.localeCompare(b.gameId));
+  // Match the code-unit ordering used by binding/coverage arrays. Locale
+  // collation orders punctuation differently for prefixes such as LA/LAC.
+  const games = schedule.filter(r => inScope(r, 'game_type')).map(r => ({ gameId: r.game_id, homeTeam: r.home_team, awayTeam: r.away_team })).sort((a, b) => a.gameId < b.gameId ? -1 : a.gameId > b.gameId ? 1 : 0);
   same(games.map(g => g.gameId), [...binding.games].sort(), 'schedule game set');
   must(games.every(g => g.homeTeam && g.awayTeam && g.homeTeam !== g.awayTeam), 'invalid schedule teams');
   const players = arr(c.players).map(obj), unattributed = arr(c.unattributed_source_observations).map(obj), teams = arr(c.teams).map(obj), population = [...players, ...unattributed];
