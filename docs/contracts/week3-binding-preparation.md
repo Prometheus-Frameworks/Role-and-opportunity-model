@@ -86,14 +86,15 @@ It cannot substitute for observation/population evidence. Synthetic mode cannot 
 purpose. The existing W1/W2 guard behavior is preserved.
 
 Fresh implementer validation: the original exact tree's 256 synthetic tests passed;
-the extended complete suite passes 283/283. Focused adapter/W1/W2/W3/builder selection
-passes 144/144. A direct old/new preservation comparison found byte-identical W1/W2
+the extended complete suite passes 284/284. Focused adapter/W1/W2/W3/builder selection
+passes 145/145. A direct old/new preservation comparison found byte-identical W1/W2
 handoffs, complete companion bytes/pins and all four positional branch state/binding
 outputs using fictional fixtures. Retained W1/W2 binding files are untouched. No real
 W1/W2/W3 adapter or producer was run. Strict no-emit TypeScript checking of the changed adapter, builder and focused test
 passes with the existing compiler recovered from a prior scratch checkout; no dependency
 was installed. The independent review's residual-population evidence exclusion finding
 was repaired and covered across all four count fields before the final review.
+A distinct-residual-ID regression also protects unchanged RB claim/share evidence selection.
 Fresh independent exact-head review is still required; implementer checks do not supply it.
 
 This change deliberately leaves `adaptReviewedAllocation` closed to real W3 input.

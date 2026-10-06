@@ -393,3 +393,14 @@ test('independent P2: receipt cannot replace residual population evidence after 
     assert.throws(()=>state(input),/purpose receipt cannot support observations/);
   }
 });
+
+test('distinct residual evidence does not change RB claim or room-share support selection',()=>{
+  const {input}=balanced(), before=state(input).segments[0];
+  const population=input.handoff.evidence.find(e=>e.id===input.handoff.teams[0].population.evidence[0])!;
+  for(const field of ['carries','targets','receptions','passAttempts'] as const) {
+    const id=`residual:${field}`;input.handoff.evidence.push({...structuredClone(population),id});
+    input.handoff.teams[0].population.unallocated[field].evidence=[id];
+  }
+  resealHandoff(input);const after=state(input).segments[0];
+  assert.deepEqual(after.claims,before.claims);assert.deepEqual(after.branch,before.branch);
+});
