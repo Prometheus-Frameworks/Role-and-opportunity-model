@@ -42,8 +42,9 @@ test('Week 2 fixture retains counts, exact Data objects, native OTHER and unreso
   assert.equal(r.handoff.evidenceCutoff, null); assert.equal(r.handoff.correction, 'open');
   assert.equal(r.handoff.finality, 'unknown'); assert.deepEqual(adapt(f).companionBytes, r.companionBytes);
 });
-test('unreviewed scope or injected source binding cannot enter source lane', () => {
-  for (const scope of [{ ...selection, week: 3 }, { ...selection, season: 2025 }, { ...selection, seasonType: 'POST' }, { ...selection, pins: [] }]) {
+test('reviewed scopes remain closed to their retained bindings and caller selectors', () => {
+  assert.throws(() => adaptReviewedAllocation(new Map(), output, { ...selection, week: 3 }), /missing retained bytes/);
+  for (const scope of [{ ...selection, season: 2025 }, { ...selection, seasonType: 'POST' }, { ...selection, pins: [] }]) {
     assert.throws(() => adaptReviewedAllocation(new Map(), output, scope as any), /unreviewed scope/);
   }
   assert.throws(() => adaptReviewedAllocation(week2().bytes, output, selection), /missing retained bytes/);

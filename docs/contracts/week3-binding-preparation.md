@@ -101,3 +101,16 @@ This change deliberately leaves `adaptReviewedAllocation` closed to real W3 inpu
 A concrete retained W3 binding, independently qualified purpose receipt and separately
 authorized execution remain subsequent gates. There is no source admission, cohort
 expansion, Forecast work, consumer activation, deployment or schedule. Keep PR #30 unmerged.
+
+
+## October 9 TQ-011 revision 2 — retained Week 3 closed selection
+
+Joe transferred the remaining TQ-011 r2 assignment to the NFL Signal implementing session on October 9. This section records only the authorized retained-input binding completion. The completed October 6 builder/replay-receipt guard repair above is unchanged and was not reopened.
+
+Preflight reconfirmed ROP #30 at `cdb1ae5fbcf364fa383d540ec531f16ac6181d83` over base `eab07cbfc17a841804991194ac162609224bf744`, Data #278 at `e6a743cd77fff70fc06397409c0571d448f1a918`, and Teamstate #96 at `9153a7f66f0f502405bb7ae6115a2c68295296f3`. No later #30 branch update, workflow/status run, competing Week 3 ROP PR or inspected active executor was found. The receiving session independently reauthenticated all **16/16** retained members from GitHub objects by exact referenced path/commit, byte size and SHA-256. Candidate `f3366ac1c2192641c6e94ba7c756ed2e12ba73b37550619ae143deaeab9f9902` remains 1,339,996 bytes. The paired retained-input manifest identity remains `cf1c2a555bda20199ca36642f427eb83edfbfbb5f4546e233ce994a0fe8aa1b1`.
+
+The new `retainedWeek3Binding.ts` is a deep-frozen, closed source binding over those 16 pins. It keeps `candidateGeneratedAt=null`; the October 3 clock identifies only the fresh offline replay instance. Build receipt, 13-member replay manifest and clean Data review remain distinct raw-byte-pinned records. No purpose receipt is present. `adaptReviewedAllocation` now admits only the exact 2026 REG Week 1, Week 2 or Week 3 selectors and chooses the corresponding frozen binding; caller-provided selectors/pins remain rejected. Existing complete-population, source-row, denominator/share, receipt, correction/finality and missingness validation is reused unchanged.
+
+Focused regressions cover the frozen Week 3 identity, W1/W2 selector preservation, wrong week/season/type and caller selectors, changed pins, incomplete source populations and distinct candidate/replay records. This implementation does not apply purpose acceptance and does not invoke real retained bytes through the adapter or Role State producer. Source admission, cohort expansion, Forecast, consumers, deployment, schedules and merge remain excluded.
+
+At publication this section remains **independent-review pending**. The final review must bind the exact published ROP head and pair it with unchanged Teamstate #96 `9153a7f66f0f502405bb7ae6115a2c68295296f3` plus manifest `cf1c2a555bda20199ca36642f427eb83edfbfbb5f4546e233ce994a0fe8aa1b1`. Any material finding stops TQ-011 r2 rather than reopening the October 6 builder repair.

@@ -4,6 +4,7 @@ import type { ArtifactRef, Counts, Field, Evidence, PlayerTeamAllocationHandoffV
 import { validateAllocationHandoffV1 } from '../validation/weeklyRoleStateV1.ts';
 import { RETAINED_WEEK1_BINDING } from './retainedWeek1Binding.ts';
 import { RETAINED_WEEK2_BINDING } from './retainedWeek2Binding.ts';
+import { RETAINED_WEEK3_BINDING } from './retainedWeek3Binding.ts';
 
 export type RawPin = { path: string; size: number; sha256: string };
 export type OfflineBinding = {
@@ -26,8 +27,8 @@ const str = (v: Json | undefined): string => { must(typeof v === 'string', 'expe
 const same = (a: unknown, b: unknown, label: string): void => must(canonicalizeJcs(a) === canonicalizeJcs(b), label);
 const clone = <T>(v: T): T => structuredClone(v);
 const utf8 = (v: unknown): Uint8Array => new TextEncoder().encode(JSON.stringify(v));
-export type ReviewedAllocationScope = { season: 2026; seasonType: 'REG'; week: 1 | 2 };
-/** Week 3 is fixture-only until its exact retained evidence binding is qualified. */
+export type ReviewedAllocationScope = { season: 2026; seasonType: 'REG'; week: 1 | 2 | 3 };
+/** Synthetic tests may exercise the same three bounded 2026 REG weekly scopes. */
 export type SyntheticAllocationScope = { season: 2026; seasonType: 'REG'; week: 1 | 2 | 3 };
 const week1: ReviewedAllocationScope = { season: 2026, seasonType: 'REG', week: 1 };
 const core = { carries: 'carries', targets: 'targets', receptions: 'receptions', passAttempts: 'attempts' } as const;
@@ -142,9 +143,10 @@ export type AllocationAdapterResult = {
 
 /** Closed retained binding selection. No caller pins, current pointers, discovery, or provider I/O. */
 export function adaptReviewedAllocation(bytes: ReadonlyMap<string, Uint8Array>, output: OutputIdentity, selection: ReviewedAllocationScope): AllocationAdapterResult {
-  must(selection !== null && typeof selection === 'object' && (selection.week === 1 || selection.week === 2), 'unreviewed scope');
+  must(selection !== null && typeof selection === 'object' && (selection.week === 1 || selection.week === 2 || selection.week === 3), 'unreviewed scope');
   same(selection, { season: 2026, seasonType: 'REG', week: selection.week }, 'unreviewed scope');
-  return adapt(bytes, selection.week === 1 ? RETAINED_WEEK1_BINDING : RETAINED_WEEK2_BINDING, output, 'candidate', selection);
+  const binding = selection.week === 1 ? RETAINED_WEEK1_BINDING : selection.week === 2 ? RETAINED_WEEK2_BINDING : RETAINED_WEEK3_BINDING;
+  return adapt(bytes, binding, output, 'candidate', selection);
 }
 /** Backward-compatible exact Week 1 entry; its binding and output representation are unchanged. */
 export function adaptRetainedWeek1(bytes: ReadonlyMap<string, Uint8Array>, output: OutputIdentity): AllocationAdapterResult {

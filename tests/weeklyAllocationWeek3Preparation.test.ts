@@ -40,8 +40,9 @@ test('Week 3 fixture is synthetic and pending, with complete companion and uncha
   assert(r.handoff.teams.flatMap(t => t.rows).some(row => row.position === 'SAF'));
   assert.deepEqual(adapt(f).companionBytes, r.companionBytes);
 });
-test('Week 3 remains rejected at real source entry even with fixture binding/acceptance hints', () => {
-  for (const scope of [selection, { ...selection, pins: [] }, { ...selection, accepted: true }]) {
+test('Week 3 real-source entry is closed to the retained binding and rejects caller hints', () => {
+  assert.throws(() => adaptReviewedAllocation(week3().bytes, output, selection), /missing retained bytes/);
+  for (const scope of [{ ...selection, pins: [] }, { ...selection, accepted: true }]) {
     assert.throws(() => adaptReviewedAllocation(week3().bytes, output, scope as any), /unreviewed scope/);
   }
 });
@@ -70,6 +71,14 @@ test('missing bytes, hash drift and unavailable generation clock never pass', ()
   assert.throws(() => adapt(drift), /raw-byte pin mismatch/);
   const clock = week3(); (clock.binding as any).candidateGeneratedAt = null;
   assert.throws(() => adapt(clock));
+});
+test('Week 3 rejects an incomplete retained player population even when coverage counters are rewritten', () => {
+  const f = week3(), c = f.candidate.candidate;
+  c.players.pop();
+  c.coverage.player_rows--;
+  c.coverage.source_player_rows_in_scope--;
+  f.rebind();
+  assert.throws(() => adapt(f), /complete source player population required/);
 });
 test('a declared generation witness must exist and bind the same candidate', () => {
   const f = week3(); f.binding.generationWitness = { path: 'absent-build-receipt.json', dataBase: 'b'.repeat(40) };
