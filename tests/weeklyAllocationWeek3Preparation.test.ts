@@ -26,6 +26,53 @@ function week3() {
 }
 const adapt = (f = week3()) => adaptSyntheticAllocation(f.bytes, f.binding, output, selection);
 
+/** These two real-format IDs exercise sorting only; observations remain fictional AAA/BBB rows. */
+function week3PrefixSchedule() {
+  const f = week3(), observed = '2026_03_AAA_BBB';
+  const prefixes = ['2026_03_LA_DEN', '2026_03_LAC_BUF'];
+  f.put('games.csv', 'game_id,season,game_type,week,home_team,away_team\n' +
+    '2026_03_LA_DEN,2026,REG,3,DEN,LA\n' +
+    '2026_03_AAA_BBB,2026,REG,3,BBB,AAA\n' +
+    '2026_03_LAC_BUF,2026,REG,3,BUF,LAC\n');
+  f.binding.games = [observed, ...prefixes];
+  f.candidate.coverage.scheduled_game_ids = [...f.binding.games].sort();
+  f.candidate.coverage.missing_game_ids = [...prefixes].sort();
+  f.candidate.coverage.schedule_coverage = 'partial_or_conflicting';
+  const rebindSchedule = () => {
+    Object.assign(f.candidate.schedule_receipt, f.rawPin('games.csv'));
+    const receipt = { ...f.candidate.schedule_receipt }; delete receipt.source_support_commit;
+    f.put('schedule.json', receipt); f.rebind();
+  };
+  rebindSchedule(); return { f, observed, prefixes, rebindSchedule };
+}
+
+test('Week 3 LA_DEN/LAC_BUF schedule IDs use consistent code-unit ordering', () => {
+  const baseline = adapt(), { f, observed } = week3PrefixSchedule(), r = adapt(f);
+  assert.deepEqual(r.handoff.expectedGameIds, f.binding.games);
+  assert.deepEqual(r.handoff.games.map(g => g.gameId), [observed]);
+  assert.equal(r.handoff.coverage, 'partial');
+  assert.deepEqual(r.handoff.teams, baseline.handoff.teams);
+  assert.deepEqual(r.companion.sourceNativeRows, baseline.companion.sourceNativeRows);
+  assert.deepEqual(r.handoff.purpose, { status: 'pending', purposes: [], evidence: [] });
+  assert.equal(r.handoff.finality, 'unknown'); assert.equal(r.handoff.correction, 'open');
+  assert.equal(r.handoff.evidenceCutoff, null);
+  assert.equal(r.companion.binding.candidateGeneratedAt, baseline.companion.binding.candidateGeneratedAt);
+});
+
+test('Week 3 prefix schedule still rejects changed game membership', () => {
+  const { f, observed } = week3PrefixSchedule();
+  f.binding.games = [observed, '2026_03_LA_DEN', '2026_03_LAC_SEA'];
+  assert.throws(() => adapt(f), /schedule game set/);
+});
+
+test('Week 3 prefix schedule still rejects duplicate game IDs', () => {
+  const { f, rebindSchedule } = week3PrefixSchedule();
+  const csv = new TextDecoder().decode(f.bytes.get('games.csv'));
+  f.put('games.csv', csv + '2026_03_LAC_BUF,2026,REG,3,BUF,LAC\n');
+  rebindSchedule();
+  assert.throws(() => adapt(f), /schedule game set/);
+});
+
 test('Week 3 fixture is synthetic and pending, with complete companion and unchanged definitions', () => {
   const f = week3(), r = adapt(f);
   assert.equal(r.handoff.mode, 'synthetic'); assert.deepEqual(r.handoff.scope, selection);
