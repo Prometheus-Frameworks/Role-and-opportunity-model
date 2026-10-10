@@ -259,3 +259,148 @@ test('companion verification declaration cannot imply admission or authenticatio
   const { input } = setup(); resealCompanion(input,c => { c.verification.sourceAdmission = 'accepted'; });
   assert.throws(() => state(input), /companion admission\/verification mismatch/);
 });
+
+/** All replay/receipt records below are fictional; no real-player adapter is called. */
+function replaySetup() {
+  const f = fixture();
+  const walk = (v: any): any => Array.isArray(v) ? v.map(walk) : v && typeof v === 'object'
+    ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, k === 'week' ? typeof x === 'string' ? '3' : 3 : walk(x)]))
+    : typeof v === 'string' ? v.replaceAll('2026_01_', '2026_03_') : v;
+  for (const path of ['player.csv', 'team.csv', 'games.csv']) {
+    const rows = readSourceCsv(f.bytes.get(path)!).map(r => ({ ...walk(r), week: '3' }));
+    const keys = Object.keys(rows[0]); f.put(path, [keys.join(','), ...rows.map(r => keys.map(k => r[k]).join(','))].join('\n') + '\n');
+  }
+  Object.assign(f.candidate, walk(f.candidate)); f.binding.games = f.binding.games.map(g => g.replace('2026_01_', '2026_03_'));
+  for (const kind of ['player', 'team']) Object.assign(f.candidate.candidate.source_receipt.sources[kind], f.rawPin(kind + '.csv'));
+  f.put('source.json', f.candidate.candidate.source_receipt); f.candidate.source_receipt_sha256 = f.rawPin('source.json').sha256;
+  Object.assign(f.candidate.schedule_receipt, f.rawPin('games.csv'));
+  const schedule = { ...f.candidate.schedule_receipt }; delete schedule.source_support_commit; f.put('schedule.json', schedule); f.rebind();
+  const w = { path:'replay/build-receipt.json', manifestPath:'replay/manifest.json', reviewPath:'replay/review.json', dataBase:'b'.repeat(40), selectedDataHead:'c'.repeat(40), reviewedHead:'d'.repeat(40) };
+  const members = f.binding.pins.map(p => ({ ...p, commit:w.selectedDataHead }));
+  const build = { schema_version:'week3_fresh_replay_generation_witness_v1', witness_kind:'fresh_offline_replay_materialization', original_candidate_generated_at:null, base:w.dataBase, selected_data_head:w.selectedDataHead, support_commit:f.binding.sourceSupportCommit, candidate_path:f.binding.paths.candidate, result:{sha256:f.rawPin('candidate.json').sha256,status:'candidate_revision_written'}, build_started_at:'2026-10-03T15:34:05Z', build_completed_at:'2026-10-03T15:34:06Z', source_admission:false, rop_purpose_acceptance:false,evidence_cutoff:null,finality:'unknown' };
+  f.put(w.path,build);
+  const manifest = { schema_version:'week3_replay_member_manifest_v1', selected_data_head:w.selectedDataHead, implementation_commit:w.dataBase,source_support_commit:f.binding.sourceSupportCommit,candidate_sha256:build.result.sha256,consumer_admitted:false,build_receipt:{file:'build-receipt.json',sha256:f.rawPin(w.path).sha256,size:f.bytes.get(w.path)!.length},members };
+  const review = { schema_version:'week3_independent_repair_review_v1',disposition:'clean',material_findings:[],data:{reviewed_head:w.reviewedHead,parent:w.selectedDataHead,candidate_sha256:build.result.sha256,tree_equivalence_verified:true,manifest_members_authenticated:members.length,original_generation_clock:'unknown',fresh_independent_replay_started_at:'2026-10-03T15:37:01Z',fresh_independent_replay_completed_at:'2026-10-03T15:37:02Z'} };
+  f.put(w.manifestPath,manifest); f.put(w.reviewPath,review); f.rebind();
+  f.binding.candidateGeneratedAt = null; f.binding.generationEvidence = `${w.path}#build_completed_at`; f.binding.replayWitness = w;
+  const a = adaptSyntheticAllocation(f.bytes,f.binding,{...output,generatedAt:'2026-10-03T16:00:00Z'},{season:2026,seasonType:'REG',week:3});
+  const input: BuildInput = {handoff:a.handoff,companionBytes:a.companionBytes,companionPin:a.companionPin,subject:{namespace:'nflverse:gsis',playerId:'00-0000001'},artifact:{artifactId:'synthetic:replay-state',revision:'1',generatedAt:'2026-10-03T16:00:01Z'}};
+  return { f, a, input, w };
+}
+function editRecord(i: BuildInput, path: string, mutate: (r:any) => void) {
+  resealCompanion(i,c => {
+    const r = JSON.parse(c.evidenceRecords[path]); mutate(r); c.evidenceRecords[path] = JSON.stringify(r);
+    const raw = new TextEncoder().encode(c.evidenceRecords[path]), pin = c.binding.pins.find((p:any)=>p.path===path);
+    pin.sha256 = rawByteSha256(raw); pin.size = raw.length;
+    c.verification.verifiedFiles = c.binding.pins.map((p:any)=>({...p,digestProfile:'raw-bytes-sha256-v1'}));
+  });
+}
+test('replay has separate identity, truthful clock, complete population and pending purpose', () => {
+  const {input,a} = replaySetup(), s = state(input);
+  assert(input.handoff.evidence.every(e=>e.artifact.artifactId.startsWith('data-replay:')));
+  assert.equal(input.handoff.evidence[0].artifact.generatedAt,'2026-10-03T15:34:06Z');
+  assert.equal(a.companion.binding.candidateGeneratedAt,null); assert.equal(s.readiness.purpose,'pending');
+  assert.equal(s.readiness.evidence,'fixture'); assert.equal(s.consumerActivation,'none');
+  assert.equal(a.handoff.teams.flatMap(t=>t.rows).length,6);
+  assert.deepEqual(state(input),s);
+});
+for (const [name, mutate] of [
+  ['wrong replay identity',(r:any)=>{r.witness_kind='original_build';}],
+  ['wrong candidate digest',(r:any)=>{r.result.sha256='a'.repeat(64);}],
+  ['wrong replay candidate path',(r:any)=>{r.candidate_path='other.json';}],
+  ['original clock claimed',(r:any)=>{r.original_candidate_generated_at=r.build_completed_at;}],
+  ['source admitted',(r:any)=>{r.source_admission=true;}],
+] as const) test(`repinned ${name} rejected at builder`,()=>{
+  const {input,w}=replaySetup(); editRecord(input,w.path,mutate); assert.throws(()=>state(input),/replay/);
+});
+for (const [name,mutate] of [
+  ['wrong review head',(r:any)=>{r.data.reviewed_head='e'.repeat(40);}],
+  ['wrong reviewed candidate',(r:any)=>{r.data.candidate_sha256='a'.repeat(64);}],
+  ['unresolved findings',(r:any)=>{r.material_findings=['P1'];}],
+  ['wrong manifest member count',(r:any)=>{r.data.manifest_members_authenticated++;}],
+  ['review predates replay',(r:any)=>{r.data.fresh_independent_replay_started_at='2026-10-03T15:30:00Z';}],
+] as const) test(`repinned ${name} rejected`,()=>{
+  const {input,w}=replaySetup(); editRecord(input,w.reviewPath,mutate); assert.throws(()=>state(input),/review/);
+});
+test('replay cannot borrow its clock under original candidate identity or binding',()=>{
+  for (const change of [
+    (i:BuildInput)=>{i.handoff.evidence.forEach(e=>{e.artifact.artifactId='data:candidate.json';});resealHandoff(i);},
+    (i:BuildInput)=>{resealCompanion(i,c=>{c.binding.candidateGeneratedAt='2026-10-03T15:34:06Z';});},
+  ]) { const {input}=replaySetup();change(input);assert.throws(()=>state(input),/evidence artifact|original generation clock/); }
+});
+test('missing and altered raw replay records fail after companion repinning',()=>{
+  for(const change of [(c:any)=>{delete c.evidenceRecords[c.binding.replayWitness.reviewPath];},(c:any)=>{c.evidenceRecords[c.binding.replayWitness.path]+=' ';}]) {
+    const {input}=replaySetup();resealCompanion(input,change);assert.throws(()=>state(input),/missing evidence record|raw-byte pin/);
+  }
+});
+test('manifest omissions and hash changes fail after repinning',()=>{
+  for(const mutate of [(m:any)=>{m.members.pop();},(m:any)=>{m.members[0].sha256='f'.repeat(64);},(m:any)=>{m.build_receipt.sha256='f'.repeat(64);}]) {
+    const {input,w}=replaySetup();editRecord(input,w.manifestPath,mutate);assert.throws(()=>state(input),/manifest|member/);
+  }
+});
+function withReceipt() {
+  const {input,w}=replaySetup();input.handoff.mode='candidate'; input.handoff.evidence.forEach(e=>{if(e.kind==='fixture')e.kind='source';});
+  const path='operator/receipt.json', acceptedAt='2026-10-03T15:45:00Z';
+  const r={schema_version:'rop_provisional_purpose_receipt_v1',status:'accepted',source_admission:false,execution_authorized:false,consumer_activation:false,scope:input.handoff.scope,evidence_artifact:input.handoff.evidence[0].artifact,purposes:['rop_observed_role'],accepted_at:acceptedAt};
+  const text=JSON.stringify(r), raw=new TextEncoder().encode(text), sha=rawByteSha256(raw);
+  input.handoff.purpose={status:'accepted',purposes:['rop_observed_role'],evidence:['purpose:receipt']};
+  input.handoff.evidence.push({id:'purpose:receipt',kind:'source',artifact:{artifactId:`operator-receipt:${path}`,revision:sha,sha256:sha,artifactType:'evidence_file',digestProfile:'raw-bytes-sha256-v1',generatedAt:acceptedAt},locator:'/',definition:'Fictional operator receipt for guard regression only',parents:[],sourceObservedAt:null,sourcePublishedAt:null,retrievedAt:null,generatedAt:acceptedAt});
+  resealCompanion(input,c=>{c.binding.purposeReceipt={path};c.evidenceRecords[path]=text;c.binding.pins.push({path,size:raw.length,sha256:sha});c.verification.verifiedFiles=c.binding.pins.map((p:any)=>({...p,digestProfile:'raw-bytes-sha256-v1'}));});
+  resealHandoff(input); return {input,path,w};
+}
+test('separate fictional operator receipt supports purpose and never replaces row observations',()=>{
+  const {input}=withReceipt(),s=state(input);assert.equal(s.readiness.purpose,'accepted');assert.equal(s.consumerActivation,'none');
+  assert.equal(s.segments[0].observations.targets.value,2);
+});
+for(const [name,mutate] of [
+  ['receipt scope',(r:any)=>{r.scope.week=2;}],
+  ['receipt evidence digest',(r:any)=>{r.evidence_artifact.sha256='a'.repeat(64);}],
+  ['receipt original identity',(r:any)=>{r.evidence_artifact.artifactId='data:candidate.json';}],
+  ['receipt execution authority',(r:any)=>{r.execution_authorized=true;}],
+  ['receipt predates review',(r:any)=>{r.accepted_at='2026-10-03T15:35:00Z';}],
+  ['receipt wrong purpose',(r:any)=>{r.purposes=['tts_allocation'];}],
+] as const) test(`repinned ${name} mismatch fails`,()=>{const {input,path}=withReceipt();editRecord(input,path,mutate);assert.throws(()=>state(input),/purpose receipt/);});
+test('replay purpose cannot be accepted without external receipt',()=>{
+  const {input}=replaySetup();input.handoff.mode='candidate';input.handoff.evidence.forEach(e=>{if(e.kind==='fixture')e.kind='source';});
+  input.handoff.purpose={status:'accepted',purposes:['rop_observed_role'],evidence:['team:0']};resealHandoff(input);assert.throws(()=>state(input),/replay purpose receipt required/);
+});
+test('receipt cannot become row observation evidence even with resealed handoff',()=>{
+  const {input}=withReceipt();input.handoff.teams[0].totals.targets.evidence=['purpose:receipt'];resealHandoff(input);assert.throws(()=>state(input),/purpose receipt cannot support observations/);
+});
+test('replay cannot evade companion or handoff digest checks',()=>{
+  const {input}=replaySetup();input.companionPin.sha256='a'.repeat(64);assert.throws(()=>state(input),/companion raw-byte pin/);
+  const other=replaySetup().input;other.handoff.evidence[0].artifact.revision='altered';assert.throws(()=>state(other),/handoff JCS|invalid qualified handoff/);
+});
+test('adapter authenticates replay records before emitting a handoff',()=>{
+  for(const pathKey of ['path','reviewPath','manifestPath'] as const) {
+    const {f,w}=replaySetup(); const path=w[pathKey]; f.put(path,{}); f.rebind();
+    assert.throws(()=>adaptSyntheticAllocation(f.bytes,f.binding,{...output,generatedAt:'2026-10-03T16:00:00Z'},{season:2026,seasonType:'REG',week:3}),/replay|expected/);
+  }
+  const {f}=replaySetup();f.binding.candidateGeneratedAt='2026-10-03T15:34:06Z';
+  assert.throws(()=>adaptSyntheticAllocation(f.bytes,f.binding,{...output,generatedAt:'2026-10-03T16:00:00Z'},{season:2026,seasonType:'REG',week:3}),/original generation clock/);
+});
+test('replay handoff cannot predate the completed independent review',()=>{
+  const {f,input}=replaySetup();
+  assert.throws(()=>adaptSyntheticAllocation(f.bytes,f.binding,{...output,generatedAt:'2026-10-03T15:35:00Z'},{season:2026,seasonType:'REG',week:3}),/artifact chronology/);
+  input.handoff.generatedAt='2026-10-03T15:35:00Z';input.handoff.artifact.generatedAt=input.handoff.generatedAt;
+  input.handoff.evidence.filter(e=>e.kind==='derived').forEach(e=>{e.generatedAt=input.handoff.generatedAt;});resealHandoff(input);
+  assert.throws(()=>state(input),/predates replay review/);
+});
+
+test('independent P2: receipt cannot replace residual population evidence after resealing',()=>{
+  for(const field of ['carries','targets','receptions','passAttempts'] as const) {
+    const {input}=withReceipt();input.handoff.teams[0].population.unallocated[field].evidence=['purpose:receipt'];resealHandoff(input);
+    assert.throws(()=>state(input),/purpose receipt cannot support observations/);
+  }
+});
+
+test('distinct residual evidence does not change RB claim or room-share support selection',()=>{
+  const {input}=balanced(), before=state(input).segments[0];
+  const population=input.handoff.evidence.find(e=>e.id===input.handoff.teams[0].population.evidence[0])!;
+  for(const field of ['carries','targets','receptions','passAttempts'] as const) {
+    const id=`residual:${field}`;input.handoff.evidence.push({...structuredClone(population),id});
+    input.handoff.teams[0].population.unallocated[field].evidence=[id];
+  }
+  resealHandoff(input);const after=state(input).segments[0];
+  assert.deepEqual(after.claims,before.claims);assert.deepEqual(after.branch,before.branch);
+});

@@ -2,6 +2,7 @@
  * Slice 2 companion; this module neither retrieves evidence nor admits a producer. */
 import type { ArtifactRef, Claim, ClaimId, Count, Field, PlayerTeamAllocationHandoffV1 as Handoff, Position, Segment, Share, TeamAllocation, WeeklyRoleStateV1 as State } from '../contracts/weeklyRoleStateV1.ts';
 import { CONTENT_PROFILE, RAW_PROFILE, artifactKey, canonicalizeJcs, compareArtifactClocks, contractContentSha256, contractReferences, parseJcsJson, rawByteSha256, validateArtifactReference } from '../contracts/artifactDigestV1.ts';
+import { allocationEvidenceIdentity, type OfflineBinding } from '../adapters/weeklyAllocationFromDataV1.ts';
 import { fields, validateAllocationHandoffV1, validateWeeklyRoleStateV1 } from '../validation/weeklyRoleStateV1.ts';
 
 export type CompanionPin = { digestProfile: typeof RAW_PROFILE; sha256: string; size: number };
@@ -59,10 +60,19 @@ function boundCompanion(h: Handoff, input: BuildInput): Obj {
   fail(equal(v.verifiedFiles, pins.map(entry => ({ ...object(entry, 'support pin'), digestProfile: RAW_PROFILE }))), 'retained support-pin declaration mismatch');
   const candidatePath = object(binding.paths, 'binding paths required').candidate;
   fail(typeof candidatePath === 'string' && paths.has(candidatePath), 'candidate support pin required');
-  const candidatePin = pins.map(entry => object(entry, 'support pin')).find(entry => entry.path === candidatePath)!;
-  const candidateArtifact: ArtifactRef = { artifactId: `data:${candidatePath}`, revision: candidatePin.sha256,
-    sha256: candidatePin.sha256, artifactType: 'evidence_file', digestProfile: RAW_PROFILE, generatedAt: binding.candidateGeneratedAt };
-  fail(validateArtifactReference(candidateArtifact).length === 0 && h.evidence.every(e => equal(e.artifact, candidateArtifact)), 'evidence artifact/candidate support pin mismatch');
+  const identity = allocationEvidenceIdentity(binding as OfflineBinding, c.evidenceRecords ?? {}, h.scope);
+  fail(!identity.qualifiedAt || compareArtifactClocks(h.generatedAt, identity.qualifiedAt) >= 0, 'handoff predates replay review');
+  const receiptIds = new Set(h.purpose.evidence);
+  fail(!binding.replayWitness || h.purpose.status !== 'accepted' || binding.purposeReceipt, 'replay purpose receipt required');
+  if (binding.purposeReceipt && h.purpose.status === 'accepted') {
+    fail(identity.receipt && h.purpose.status === 'accepted' && equal(h.purpose.purposes, identity.purposes) && receiptIds.size === 1, 'purpose receipt/handoff mismatch');
+    fail(h.evidence.filter(e => receiptIds.has(e.id)).length === 1, 'purpose receipt evidence missing');
+  }
+  fail(h.evidence.every(e => {
+    if (binding.purposeReceipt && h.purpose.status === 'accepted' && receiptIds.has(e.id))
+      return e.kind === 'source' && equal(e.artifact, identity.receipt) && e.locator === '/' && e.parents.length === 0 && e.generatedAt === identity.receipt!.generatedAt;
+    return equal(e.artifact, identity.source);
+  }), 'evidence artifact/candidate support pin mismatch');
   const envelope = object(c.sourceEnvelope, 'source envelope required'), candidate = object(envelope.candidate, 'candidate required');
   fail(envelope.schema_version === 'weekly_boxscore_publication_candidate_v0' && envelope.status === 'candidate_needs_review' && envelope.consumer_admitted === false &&
     candidate.schema_version === 'weekly_boxscore_candidate_v0' && candidate.status === 'candidate_needs_review' && candidate.consumer_admitted === false, 'noncandidate or admitted source envelope');
@@ -84,6 +94,7 @@ function boundCompanion(h: Handoff, input: BuildInput): Obj {
     fail(equal(n.dataDerived, resolved ? raw!.derived : null), 'Data-derived object differs from source envelope');
   }
   fail(nativeCsv.size === sourceByCsv.size, 'incomplete native source population');
+  fail(h.teams.every(t => [...fields.flatMap(f => t.totals[f].evidence), ...t.population.evidence, ...fields.flatMap(f => t.population.unallocated[f].evidence), ...t.rows.flatMap(r => [...r.identity.evidence, ...r.positionEvidence, ...fields.flatMap(f => r.counts[f].evidence)])].every(id => !binding.purposeReceipt || !receiptIds.has(id))), 'purpose receipt cannot support observations');
   const teams = array(candidate.teams, 'source teams required').map(x => object(x, 'source team'));
   fail(teams.length === h.teams.length, 'team population mismatch');
   for (const t of h.teams) {

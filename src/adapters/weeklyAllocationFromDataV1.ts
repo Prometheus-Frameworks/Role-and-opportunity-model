@@ -4,10 +4,15 @@ import type { ArtifactRef, Counts, Field, Evidence, PlayerTeamAllocationHandoffV
 import { validateAllocationHandoffV1 } from '../validation/weeklyRoleStateV1.ts';
 import { RETAINED_WEEK1_BINDING } from './retainedWeek1Binding.ts';
 import { RETAINED_WEEK2_BINDING } from './retainedWeek2Binding.ts';
+import { RETAINED_WEEK3_BINDING } from './retainedWeek3Binding.ts';
 
 export type RawPin = { path: string; size: number; sha256: string };
 export type OfflineBinding = {
-  sourceSupportCommit: string; candidateGeneratedAt: string; generationEvidence: string;
+  sourceSupportCommit: string; candidateGeneratedAt: string | null; generationEvidence: string;
+  /** A new materialization identity; never an assertion about the original build clock. */
+  replayWitness?: { path: string; manifestPath: string; reviewPath: string; dataBase: string; selectedDataHead: string; reviewedHead: string };
+  /** Prepared external receipt only. Loading it does not apply acceptance. */
+  purposeReceipt?: { path: string };
   generationWitness?: { path: string; dataBase: string };
   games: readonly string[]; paths: Record<'candidate' | 'player' | 'team' | 'schedule' | 'sourceReceipt' | 'scheduleReceipt' | 'sourceLicense' | 'scheduleLicense' | 'publisher' | 'builder', string>;
   pins: readonly RawPin[];
@@ -22,7 +27,9 @@ const str = (v: Json | undefined): string => { must(typeof v === 'string', 'expe
 const same = (a: unknown, b: unknown, label: string): void => must(canonicalizeJcs(a) === canonicalizeJcs(b), label);
 const clone = <T>(v: T): T => structuredClone(v);
 const utf8 = (v: unknown): Uint8Array => new TextEncoder().encode(JSON.stringify(v));
-export type ReviewedAllocationScope = { season: 2026; seasonType: 'REG'; week: 1 | 2 };
+export type ReviewedAllocationScope = { season: 2026; seasonType: 'REG'; week: 1 | 2 | 3 };
+/** Synthetic tests may exercise the same three bounded 2026 REG weekly scopes. */
+export type SyntheticAllocationScope = { season: 2026; seasonType: 'REG'; week: 1 | 2 | 3 };
 const week1: ReviewedAllocationScope = { season: 2026, seasonType: 'REG', week: 1 };
 const core = { carries: 'carries', targets: 'targets', receptions: 'receptions', passAttempts: 'attempts' } as const;
 const fields = Object.keys(core) as Field[];
@@ -63,6 +70,64 @@ function utc(v: Json | undefined): string {
   const s = str(v).replace(/\+00:00$/, 'Z');
   must(!validateArtifactReference({ artifactId: 'clock', revision: 'clock', sha256: '0'.repeat(64), artifactType: 'evidence_file', digestProfile: RAW_PROFILE, generatedAt: s }).length, 'invalid source clock'); return s;
 }
+/** Authenticate the extra evidence at both adapter and builder boundaries. The builder
+ * receives only these raw record strings, pinned by the unchanged lossless companion.
+ * Source/member byte qualification remains the adapter's responsibility. */
+export function allocationEvidenceIdentity(binding: OfflineBinding, records: Readonly<Record<string, string>>, scope: Handoff['scope']): { source: ArtifactRef; qualifiedAt?: string; receipt?: ArtifactRef; purposes?: Handoff['purpose']['purposes'] } {
+  const pin = (path: string): RawPin => {
+    const matches = binding.pins.filter(p => p.path === path);
+    must(matches.length === 1, 'evidence record support pin'); return matches[0];
+  };
+  const record = (path: string): Obj => {
+    const p = pin(path), text = records[path]; must(typeof text === 'string', 'missing evidence record');
+    const raw = new TextEncoder().encode(text);
+    must(raw.length === p.size && rawByteSha256(raw) === p.sha256, 'evidence record raw-byte pin mismatch');
+    return obj(parseJcsJson(raw) as Json);
+  };
+  const candidate = pin(binding.paths.candidate);
+  let identity = `data:${binding.paths.candidate}`, generatedAt = binding.candidateGeneratedAt;
+  let qualifiedAt: string | undefined;
+  if (binding.replayWitness) {
+    const w = binding.replayWitness;
+    must(scope.season === 2026 && scope.seasonType === 'REG' && scope.week === 3, 'replay scope mismatch');
+    must(binding.candidateGeneratedAt === null && !binding.generationWitness, 'replay cannot substitute original generation clock');
+    must([w.path, w.manifestPath, w.reviewPath].every(p => p !== binding.paths.candidate) && new Set([w.path, w.manifestPath, w.reviewPath]).size === 3, 'distinct replay records required');
+    must([w.dataBase, w.selectedDataHead, w.reviewedHead, binding.sourceSupportCommit].every(s => /^[a-f0-9]{40}$/.test(s)), 'replay commit identity');
+    const build = record(w.path), manifest = record(w.manifestPath), review = record(w.reviewPath), result = obj(build.result), audit = obj(review.data);
+    must(build.schema_version === 'week3_fresh_replay_generation_witness_v1' && build.witness_kind === 'fresh_offline_replay_materialization' && build.original_candidate_generated_at === null, 'replay witness identity');
+    must(build.base === w.dataBase && build.selected_data_head === w.selectedDataHead && build.support_commit === binding.sourceSupportCommit && build.candidate_path === candidate.path && result.sha256 === candidate.sha256 && result.status === 'candidate_revision_written', 'replay candidate/revisions mismatch');
+    same(binding.generationEvidence, `${w.path}#build_completed_at`, 'replay generation locator');
+    generatedAt = utc(build.build_completed_at);
+    must(compareArtifactClocks(utc(build.build_started_at), generatedAt) <= 0 && build.source_admission === false && build.rop_purpose_acceptance === false && build.evidence_cutoff === null && build.finality === 'unknown', 'replay chronology/eligibility');
+    must(manifest.schema_version === 'week3_replay_member_manifest_v1' && manifest.selected_data_head === w.selectedDataHead && manifest.implementation_commit === w.dataBase && manifest.source_support_commit === binding.sourceSupportCommit && manifest.candidate_sha256 === candidate.sha256 && manifest.consumer_admitted === false, 'replay manifest identity');
+    const bp = pin(w.path), receipt = obj(manifest.build_receipt);
+    must(receipt.file === w.path.split('/').at(-1) && receipt.sha256 === bp.sha256 && receipt.size === bp.size, 'replay manifest receipt mismatch');
+    const members = arr(manifest.members).map(obj);
+    must(new Set(members.map(m => m.path)).size === members.length && members.length > 0, 'replay manifest members');
+    for (const m of members) {
+      const p = pin(str(m.path));
+      must(m.size === p.size && m.sha256 === p.sha256 && (m.commit === w.selectedDataHead || m.commit === w.dataBase), 'replay member pin/revision mismatch');
+    }
+    must(Object.values(binding.paths).every(path => members.some(m => m.path === path)), 'incomplete replay input manifest');
+    must(review.schema_version === 'week3_independent_repair_review_v1' && review.disposition === 'clean' && arr(review.material_findings).length === 0 && audit.reviewed_head === w.reviewedHead && audit.parent === w.selectedDataHead && audit.candidate_sha256 === candidate.sha256 && audit.tree_equivalence_verified === true && audit.manifest_members_authenticated === members.length && audit.original_generation_clock === 'unknown', 'replay independent review identity');
+    must(compareArtifactClocks(utc(audit.fresh_independent_replay_started_at), generatedAt) >= 0 && compareArtifactClocks(utc(audit.fresh_independent_replay_completed_at), utc(audit.fresh_independent_replay_started_at)) >= 0, 'replay review chronology');
+    qualifiedAt = utc(audit.fresh_independent_replay_completed_at);
+    identity = `data-replay:${w.path}:${binding.paths.candidate}`;
+  }
+  const source: ArtifactRef = { artifactId: identity, revision: candidate.sha256, sha256: candidate.sha256, artifactType: 'evidence_file', digestProfile: RAW_PROFILE, generatedAt: generatedAt as string };
+  must(!validateArtifactReference(source).length, 'invalid evidence generation identity');
+  if (!binding.purposeReceipt) return { source, ...(qualifiedAt ? { qualifiedAt } : {}) };
+  const path = binding.purposeReceipt.path;
+  must(path !== binding.paths.candidate && ![binding.replayWitness?.path, binding.replayWitness?.manifestPath, binding.replayWitness?.reviewPath].includes(path), 'distinct purpose receipt required');
+  const r = record(path), p = pin(path);
+  must(r.schema_version === 'rop_provisional_purpose_receipt_v1' && r.status === 'accepted' && r.source_admission === false && r.execution_authorized === false && r.consumer_activation === false, 'purpose receipt eligibility');
+  same(r.scope, scope, 'purpose receipt scope mismatch'); same(r.evidence_artifact, source, 'purpose receipt evidence identity mismatch');
+  const purposes = arr(r.purposes);
+  must(purposes.length > 0 && new Set(purposes).size === purposes.length && purposes.every(p => p === 'rop_observed_role' || p === 'tts_allocation'), 'purpose receipt purposes');
+  const receipt: ArtifactRef = { artifactId: `operator-receipt:${path}`, revision: p.sha256, sha256: p.sha256, artifactType: 'evidence_file', digestProfile: RAW_PROFILE, generatedAt: utc(r.accepted_at) };
+  must(compareArtifactClocks(receipt.generatedAt, source.generatedAt) >= 0 && (!binding.replayWitness || compareArtifactClocks(receipt.generatedAt, utc(obj(record(binding.replayWitness.reviewPath).data).fresh_independent_replay_completed_at)) >= 0), 'purpose receipt chronology');
+  return { source, ...(qualifiedAt ? { qualifiedAt } : {}), receipt, purposes: purposes as Handoff['purpose']['purposes'] };
+}
 export type AllocationAdapterResult = {
   handoff: Handoff;
   /** Mandatory lossless companion. Its raw-byte pin binds the exact handoff digest and source envelope. */
@@ -70,7 +135,7 @@ export type AllocationAdapterResult = {
     format: 'rop_allocation_bridge_companion_v1'; handoff: ArtifactRef;
     use: 'interface_qualification_only'; sourceEnvelope: Json;
     sourceNativeRows: { rowId: string; sourceCsvRow: number; identity: Record<string, string | null>; dataDerived: Json }[];
-    binding: OfflineBinding; verification: { basis: 'retained_reviewed_pins' | 'synthetic_pins'; verifiedFiles: (RawPin & { digestProfile: typeof RAW_PROFILE })[]; externalProviderAuthentication: 'not_claimed'; sourceAdmission: 'none'; consumerActivation: 'none' };
+    binding: OfflineBinding; evidenceRecords?: Record<string, string>; verification: { basis: 'retained_reviewed_pins' | 'synthetic_pins'; verifiedFiles: (RawPin & { digestProfile: typeof RAW_PROFILE })[]; externalProviderAuthentication: 'not_claimed'; sourceAdmission: 'none'; consumerActivation: 'none' };
   };
   companionPin: { digestProfile: typeof RAW_PROFILE; sha256: string; size: number };
   companionBytes: Uint8Array;
@@ -78,21 +143,22 @@ export type AllocationAdapterResult = {
 
 /** Closed retained binding selection. No caller pins, current pointers, discovery, or provider I/O. */
 export function adaptReviewedAllocation(bytes: ReadonlyMap<string, Uint8Array>, output: OutputIdentity, selection: ReviewedAllocationScope): AllocationAdapterResult {
-  must(selection !== null && typeof selection === 'object' && (selection.week === 1 || selection.week === 2), 'unreviewed scope');
+  must(selection !== null && typeof selection === 'object' && (selection.week === 1 || selection.week === 2 || selection.week === 3), 'unreviewed scope');
   same(selection, { season: 2026, seasonType: 'REG', week: selection.week }, 'unreviewed scope');
-  return adapt(bytes, selection.week === 1 ? RETAINED_WEEK1_BINDING : RETAINED_WEEK2_BINDING, output, 'candidate', selection);
+  const binding = selection.week === 1 ? RETAINED_WEEK1_BINDING : selection.week === 2 ? RETAINED_WEEK2_BINDING : RETAINED_WEEK3_BINDING;
+  return adapt(bytes, binding, output, 'candidate', selection);
 }
 /** Backward-compatible exact Week 1 entry; its binding and output representation are unchanged. */
 export function adaptRetainedWeek1(bytes: ReadonlyMap<string, Uint8Array>, output: OutputIdentity): AllocationAdapterResult {
   return adaptReviewedAllocation(bytes, output, week1);
 }
 /** Test/import seam: caller pins can ONLY produce fixture evidence and synthetic mode. */
-export function adaptSyntheticAllocation(bytes: ReadonlyMap<string, Uint8Array>, binding: OfflineBinding, output: OutputIdentity, selection: ReviewedAllocationScope = week1): AllocationAdapterResult {
-  must(selection !== null && typeof selection === 'object' && (selection.week === 1 || selection.week === 2), 'unsupported synthetic scope');
+export function adaptSyntheticAllocation(bytes: ReadonlyMap<string, Uint8Array>, binding: OfflineBinding, output: OutputIdentity, selection: SyntheticAllocationScope = week1): AllocationAdapterResult {
+  must(selection !== null && typeof selection === 'object' && (selection.week === 1 || selection.week === 2 || selection.week === 3), 'unsupported synthetic scope');
   same(selection, { season: 2026, seasonType: 'REG', week: selection.week }, 'unsupported synthetic scope');
   return adapt(bytes, binding, output, 'synthetic', selection);
 }
-function adapt(input: ReadonlyMap<string, Uint8Array>, suppliedBinding: OfflineBinding, output: OutputIdentity, mode: Handoff['mode'], selection: ReviewedAllocationScope): AllocationAdapterResult {
+function adapt(input: ReadonlyMap<string, Uint8Array>, suppliedBinding: OfflineBinding, output: OutputIdentity, mode: Handoff['mode'], selection: SyntheticAllocationScope): AllocationAdapterResult {
   const scope = { season: selection.season, season_type: selection.seasonType, week: selection.week };
   const binding = clone(suppliedBinding), bytes = new Map<string, Uint8Array>();
   must(new Set(binding.pins.map(p => p.path)).size === binding.pins.length, 'duplicate pins');
@@ -108,6 +174,10 @@ function adapt(input: ReadonlyMap<string, Uint8Array>, suppliedBinding: OfflineB
   must(envelope.schema_version === 'weekly_boxscore_publication_candidate_v0' && c.schema_version === 'weekly_boxscore_candidate_v0', 'unsupported candidate version');
   must(envelope.status === 'candidate_needs_review' && c.status === 'candidate_needs_review' && envelope.consumer_admitted === false && c.consumer_admitted === false, 'candidate lifecycle/admission mismatch');
   same(c.scope, scope, 'selected scope mismatch'); same(receipt.requested_scope, scope, 'receipt scope');
+  const evidenceRecords: Record<string, string> = {};
+  for (const path of [binding.replayWitness?.path, binding.replayWitness?.manifestPath, binding.replayWitness?.reviewPath, binding.purposeReceipt?.path])
+    if (path) evidenceRecords[path] = new TextDecoder('utf-8', { fatal: true }).decode(get(path));
+  const identity = allocationEvidenceIdentity(binding, evidenceRecords, selection), generation = identity.source.generatedAt;
   if (binding.generationWitness) {
     const witness = read(binding.generationWitness.path), result = obj(witness.result);
     same(binding.generationEvidence, `${binding.generationWitness.path}#build_completed_at`, 'generation witness locator');
@@ -129,15 +199,16 @@ function adapt(input: ReadonlyMap<string, Uint8Array>, suppliedBinding: OfflineB
   same(c.snapshot_compiled_at, receipt.snapshot_compiled_at, 'snapshot clock mismatch');
   for (const r of [obj(sources.player), obj(sources.team), scheduleReceipt]) {
     const publication = utc(r.release_asset_updated_at), start = utc(r.retrieval_started_at), end = utc(r.retrieval_completed_at);
-    must(compareArtifactClocks(publication, end) <= 0 && compareArtifactClocks(start, end) <= 0 && compareArtifactClocks(end, binding.candidateGeneratedAt) <= 0, 'source/candidate chronology');
+    must(compareArtifactClocks(publication, end) <= 0 && compareArtifactClocks(start, end) <= 0 && compareArtifactClocks(end, generation) <= 0, 'source/candidate chronology');
   }
-  must(compareArtifactClocks(utc(receipt.snapshot_compiled_at), binding.candidateGeneratedAt) <= 0, 'snapshot after candidate');
-  const sourceRef: ArtifactRef = { artifactId: `data:${p.candidate}`, revision: rawByteSha256(get(p.candidate)), sha256: rawByteSha256(get(p.candidate)), artifactType: 'evidence_file', digestProfile: RAW_PROFILE, generatedAt: binding.candidateGeneratedAt };
+  must(compareArtifactClocks(utc(receipt.snapshot_compiled_at), generation) <= 0, 'snapshot after candidate');
+  const sourceRef = identity.source;
   const root: ArtifactRef = { ...output, sha256: '0'.repeat(64), artifactType: 'player_team_allocation_handoff_v1', digestProfile: CONTENT_PROFILE };
-  must(!validateArtifactReference(sourceRef).length && !validateArtifactReference(root).length && compareArtifactClocks(sourceRef.generatedAt, root.generatedAt) <= 0, 'artifact chronology/identity');
+  must(!validateArtifactReference(sourceRef).length && !validateArtifactReference(root).length && compareArtifactClocks(sourceRef.generatedAt, root.generatedAt) <= 0 && (!identity.qualifiedAt || compareArtifactClocks(identity.qualifiedAt, root.generatedAt) <= 0), 'artifact chronology/identity');
   const rawPlayers = readSourceCsv(get(p.player)), rawTeams = readSourceCsv(get(p.team)), schedule = readSourceCsv(get(p.schedule));
   const inScope = (r: Record<string, string>, seasonType = 'season_type') => r.season === String(scope.season) && r.week === String(scope.week) && r[seasonType] === scope.season_type;
-  const games = schedule.filter(r => inScope(r, 'game_type')).map(r => ({ gameId: r.game_id, homeTeam: r.home_team, awayTeam: r.away_team })).sort((a, b) => a.gameId.localeCompare(b.gameId));
+  // Match the deterministic code-unit order used by binding and coverage arrays.
+  const games = schedule.filter(r => inScope(r, 'game_type')).map(r => ({ gameId: r.game_id, homeTeam: r.home_team, awayTeam: r.away_team })).sort((a, b) => a.gameId < b.gameId ? -1 : a.gameId > b.gameId ? 1 : 0);
   same(games.map(g => g.gameId), [...binding.games].sort(), 'schedule game set');
   must(games.every(g => g.homeTeam && g.awayTeam && g.homeTeam !== g.awayTeam), 'invalid schedule teams');
   const players = arr(c.players).map(obj), unattributed = arr(c.unattributed_source_observations).map(obj), teams = arr(c.teams).map(obj), population = [...players, ...unattributed];
@@ -183,7 +254,7 @@ function adapt(input: ReadonlyMap<string, Uint8Array>, suppliedBinding: OfflineB
   must(outerCov.game_finality === 'unknown' && outerCov.full_week_final === false && cov.game_finality === 'unverified' && cov.full_week_completeness === 'unverified', 'unsupported finality assertion');
   const evidence: Evidence[] = [];
   const evidenceFor = (id: string, locator: string, kind: 'player' | 'team', definition: string) => {
-    const r = obj(sources[kind]); evidence.push({ id, kind: mode === 'synthetic' ? 'fixture' : 'source', artifact: sourceRef, locator, definition, parents: [], sourceObservedAt: null, sourcePublishedAt: utc(r.release_asset_updated_at), retrievedAt: utc(r.retrieval_completed_at), generatedAt: binding.candidateGeneratedAt }); return [id];
+    const r = obj(sources[kind]); evidence.push({ id, kind: mode === 'synthetic' ? 'fixture' : 'source', artifact: sourceRef, locator, definition, parents: [], sourceObservedAt: null, sourcePublishedAt: utc(r.release_asset_updated_at), retrievedAt: utc(r.retrieval_completed_at), generatedAt: generation }); return [id];
   };
   const counts = (observation: Obj, ids: string[]): Counts => Object.fromEntries(fields.map(f => [f, { value: observation[core[f]], status: observation[core[f]] === null ? 'missing' : 'observed', reason: observation[core[f]] === null ? 'source_value_missing' : null, evidence: ids }])) as Counts;
   const mappedTeams: Handoff['teams'] = teams.map((t, ti) => {
@@ -226,7 +297,7 @@ function adapt(input: ReadonlyMap<string, Uint8Array>, suppliedBinding: OfflineB
   const handoff: Handoff = { contractVersion: 'player_team_allocation_handoff_v1', artifact: root, supersedes: null, mode, scope: { ...selection }, games: games.filter(g => gameIds.includes(g.gameId)), expectedGameIds: [...binding.games], coverage: missing.length ? 'partial' : 'complete', finality: 'unknown', correction: 'open', evidenceCutoff: null, generatedAt: output.generatedAt, definitions: { carries: 'Data credited carries, all positions including QB; no designed-run inference.', targets: 'Data credited targets; denominator is credited team targets, not pass attempts.', receptions: 'Data credited receptions; not targets or touches.', passAttempts: 'Data credited attempts; not dropbacks or starter participation.' }, purpose: { status: 'pending', purposes: [], evidence: [] }, evidence, teams: mappedTeams };
   const validation = validateAllocationHandoffV1(handoff); must(validation.valid, validation.errors.join('; '));
   root.sha256 = contractContentSha256(utf8(handoff), [{ artifact: root, dependencies: [sourceRef] }, { artifact: sourceRef, dependencies: [] }]);
-  const companion: AllocationAdapterResult['companion'] = { format: 'rop_allocation_bridge_companion_v1', handoff: clone(root), use: 'interface_qualification_only', sourceEnvelope: clone(envelope), sourceNativeRows: nativeRows, binding, verification: { basis: mode === 'candidate' ? 'retained_reviewed_pins' : 'synthetic_pins', verifiedFiles: binding.pins.map(pin => ({ ...pin, digestProfile: RAW_PROFILE })), externalProviderAuthentication: 'not_claimed', sourceAdmission: 'none', consumerActivation: 'none' } };
+  const companion: AllocationAdapterResult['companion'] = { format: 'rop_allocation_bridge_companion_v1', handoff: clone(root), use: 'interface_qualification_only', sourceEnvelope: clone(envelope), sourceNativeRows: nativeRows, binding, ...(Object.keys(evidenceRecords).length ? { evidenceRecords } : {}), verification: { basis: mode === 'candidate' ? 'retained_reviewed_pins' : 'synthetic_pins', verifiedFiles: binding.pins.map(pin => ({ ...pin, digestProfile: RAW_PROFILE })), externalProviderAuthentication: 'not_claimed', sourceAdmission: 'none', consumerActivation: 'none' } };
   const companionBytes = utf8(companion);
   return { handoff, companion, companionBytes, companionPin: { digestProfile: RAW_PROFILE, sha256: rawByteSha256(companionBytes), size: companionBytes.length } };
 }

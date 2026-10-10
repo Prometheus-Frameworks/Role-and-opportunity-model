@@ -85,7 +85,9 @@ test('caller-controlled synthetic pins cannot produce source evidence through re
 });
 test('exact generation chronology preserves fractions and never supplies football cutoff', () => {
   const f = fixture(); assert.throws(() => adapt(f, { ...output, generatedAt: '2026-09-16T19:22:16.255940Z' }), /artifact chronology/);
-  assert.equal(adapt(f, { ...output, generatedAt: f.binding.candidateGeneratedAt }).handoff.evidenceCutoff, null);
+  const candidateGeneratedAt = f.binding.candidateGeneratedAt;
+  assert(typeof candidateGeneratedAt === 'string');
+  assert.equal(adapt(f, { ...output, generatedAt: candidateGeneratedAt }).handoff.evidenceCutoff, null);
   f.binding.candidateGeneratedAt = '2026-09-16T15:00:59Z'; assert.throws(() => adapt(f), /chronology/);
 });
 test('source receptions cannot exceed observed targets', () => assert.throws(() => adapt(fixture(rows => { rows[0].receptions = 3; })), /receptions exceed targets/));

@@ -1,0 +1,81 @@
+{
+  "status": "retained_week3_binding_prepared_independent_review_pending",
+  "source_scope": {
+    "season": 2026,
+    "season_type": "REG",
+    "week": 3
+  },
+  "rop_base_commit": "eab07cbfc17a841804991194ac162609224bf744",
+  "rop_starting_head": "cdb1ae5fbcf364fa383d540ec531f16ac6181d83",
+  "data_pr_head": "e6a743cd77fff70fc06397409c0571d448f1a918",
+  "data_base_commit": "e1e92078c626b9e2e502e927ba0de79afd26f451",
+  "selected_data_head": "eac3b9bc22cf1fa230b233a09f5e031a2a9b409a",
+  "source_support_commit": "2b58e2c22ccd2430041afcfbd143b057830878f0",
+  "candidate_path": "exports/candidates/weekly_boxscore/revisions/2026_REG_w03/f3366ac1c2192641c6e94ba7c756ed2e12ba73b37550619ae143deaeab9f9902.json",
+  "candidate_sha256": "f3366ac1c2192641c6e94ba7c756ed2e12ba73b37550619ae143deaeab9f9902",
+  "candidate_bytes_authenticated_in_this_preparation": true,
+  "candidate_generated_at": null,
+  "generation_witness": {
+    "kind": "fresh_offline_replay_materialization",
+    "started_at": "2026-10-03T15:34:05.067808Z",
+    "completed_at": "2026-10-03T15:34:05.379891Z",
+    "original_candidate_generated_at": null,
+    "build_receipt_sha256": "c7e0b4d5a7c299ed51b85b2e1d98f5ce13eb0ac8d2765c155d2ca36ab8b66bba"
+  },
+  "exact_input_manifest": {
+    "files": 16,
+    "source_dependencies": 13,
+    "authenticated_manifest_sha256": "cf1c2a555bda20199ca36642f427eb83edfbfbb5f4546e233ce994a0fe8aa1b1",
+    "pins": "src/adapters/retainedWeek3Binding.ts",
+    "all_member_bytes_reauthenticated_2026_10_09": true,
+    "historical_pending_receipts_unchanged": true
+  },
+  "qualified_input_review": {
+    "disposition": "clean",
+    "reviewed_head": "4821a08ecad8c4ed7177b2acda0cb29d93a2649a",
+    "reviewed_tree": "e0dde60d67b719258ea3cfb190702204d0bf7756",
+    "storage_head": "739b7acdbc92f3b81463cb9a707e71ef8b0911ba",
+    "review_sha256": "e9a9611c3cbe294189584e8da30108d36594fcffc4e72a460e6b406784fb5643"
+  },
+  "closed_selection": {
+    "adapter": "src/adapters/weeklyAllocationFromDataV1.ts",
+    "weeks": [
+      1,
+      2,
+      3
+    ],
+    "week3_binding": "src/adapters/retainedWeek3Binding.ts",
+    "purpose_receipt": null
+  },
+  "paired_producer_reference": {
+    "teamstate_head": "9153a7f66f0f502405bb7ae6115a2c68295296f3",
+    "input_manifest_sha256": "cf1c2a555bda20199ca36642f427eb83edfbfbb5f4546e233ce994a0fe8aa1b1",
+    "exact_head_review_comment": 6002049032,
+    "status": "clean_reference_pair_witness_pending_final_rop_review"
+  },
+  "provisional_use_accepted": false,
+  "real_input_execution_authorized": false,
+  "consumer_activation": false,
+  "remaining_gates": [
+    "Independent exact-head review of the final ROP binding.",
+    "Paired producer-review witness against unchanged Teamstate #96.",
+    "Separate operator provisional-purpose acceptance receipt.",
+    "Separate bounded real-input execution decision."
+  ],
+  "source_limits": {
+    "game_finality": "unknown",
+    "correction_status": "open/provisional",
+    "evidence_cutoff": null,
+    "receiving_air_yards": "excluded_conflicts_retained",
+    "advanced_deployment": "unavailable",
+    "canonical_identity_admission": false,
+    "missing_player_is_zero": false
+  },
+  "checks": {
+    "retained_member_reauthentication": "16/16 size+sha256 matched",
+    "candidate_reauthentication": "matched",
+    "implementation_tests": "pending final exact-head independent review",
+    "real_input_adapter": "not_run",
+    "real_player_producer": "not_run"
+  }
+}
