@@ -1,0 +1,135 @@
+--- a/src/adapters/weeklyAllocationFromDataV1.ts
++++ b/src/adapters/weeklyAllocationFromDataV1.ts
+@@ -6,6 +6,7 @@
+ import { RETAINED_WEEK2_BINDING } from './retainedWeek2Binding.ts';
+ import { RETAINED_WEEK3_BINDING } from './retainedWeek3Binding.ts';
+ import { PRIVATE_RELEASE_BINDINGS, PRIVATE_RELEASE_INPUT_MANIFEST_SHA256 } from './privateReleaseBindings.ts';
++import { PRIVATE_EXTENSION_BINDINGS } from './privateExtensionBindings.ts';
+ 
+ export type RawPin = { path: string; size: number; sha256: string };
+ export type OfflineBinding = {
+@@ -17,6 +18,8 @@
+   generationWitness?: { path: string; dataBase: string };
+   /** Fixed, independently input-reviewed private retrospective release; no source admission. */
+   releaseWitness?: { path: string; reviewPath: string };
++  /** Separate W6–W8 review lineage. Never shares the W1–W5 batch review or purpose receipt. */
++  extensionWitness?: { path: string; manifestPath: string; reviewPath: string; sourceAcquisitionWeek: 6 | 7 | 8 };
+   games: readonly string[]; paths: Record<'candidate' | 'player' | 'team' | 'schedule' | 'sourceReceipt' | 'scheduleReceipt' | 'sourceLicense' | 'scheduleLicense' | 'publisher' | 'builder', string>;
+   pins: readonly RawPin[];
+ };
+@@ -34,6 +37,14 @@
+ /** Synthetic tests may exercise the same three bounded 2026 REG weekly scopes. */
+ export type SyntheticAllocationScope = { season: 2026; seasonType: 'REG'; week: 1 | 2 | 3 };
+ export type PrivateReleaseScope = { season: 2026; seasonType: 'REG'; week: 1 | 2 | 3 | 4 | 5 };
++export type PrivateExtensionScope = { season: 2026; seasonType: 'REG'; week: 6 | 7 | 8 };
++/** Explicit acquisition-scope witness; season-to-date source containers are not relabeled. */
++export function verifyExtensionAcquisitionScope(selection: PrivateExtensionScope, receiptScope: unknown, sourceAcquisitionWeek: 6 | 7 | 8): void {
++  must([6,7,8].includes(selection.week) && selection.season===2026 && selection.seasonType==='REG', 'unsupported extension derivation scope');
++  must(sourceAcquisitionWeek===selection.week || (selection.week===6 && sourceAcquisitionWeek===7), 'unsupported retrospective source scope');
++  same(receiptScope, {season:2026,season_type:'REG',week:sourceAcquisitionWeek}, 'retrospective acquisition receipt scope');
++}
++
+ const week1: ReviewedAllocationScope = { season: 2026, seasonType: 'REG', week: 1 };
+ const core = { carries: 'carries', targets: 'targets', receptions: 'receptions', passAttempts: 'attempts' } as const;
+ const fields = Object.keys(core) as Field[];
+@@ -140,6 +151,27 @@
+     must(compareArtifactClocks(qualifiedAt, generatedAt) >= 0, 'private release review chronology');
+     identity = `data-retrospective-release:${w.path}:${binding.paths.candidate}`;
+   }
++  if (binding.extensionWitness) {
++    must(!binding.releaseWitness && !binding.replayWitness && !binding.generationWitness, 'extension cannot reuse historical qualification');
++    must(scope.season === 2026 && scope.seasonType === 'REG' && [6,7,8].includes(scope.week), 'private extension scope');
++    const w = binding.extensionWitness, build = record(w.path), manifest = record(w.manifestPath), review = record(w.reviewPath);
++    same(build.scope, scope, 'extension witness scope mismatch');
++    same(build.source_acquisition_scope, {season:2026,seasonType:'REG',week:w.sourceAcquisitionWeek}, 'extension acquisition scope mismatch');
++    must(build.schema_version === 'rop_private_extension_binding_witness_v1' && build.status === 'pending_independent_review' && build.source_admission === false && build.consumer_activation === false && build.evidence_cutoff === null && build.finality === 'unknown' && build.correction === 'open', 'extension witness eligibility');
++    must(build.candidate_sha256 === candidate.sha256 && build.source_support_commit === binding.sourceSupportCommit, 'extension candidate identity mismatch');
++    same(binding.generationEvidence, `${w.path}#candidate_generated_at`, 'extension generation locator');
++    generatedAt = utc(build.candidate_generated_at);
++    must(binding.candidateGeneratedAt === generatedAt && compareArtifactClocks(utc(build.preparation_generated_at), generatedAt) >= 0, 'extension materialization chronology');
++    same(manifest.scope, scope, 'extension manifest scope');
++    same(manifest.source_acquisition_scope, {season:2026,seasonType:'REG',week:w.sourceAcquisitionWeek}, 'extension manifest acquisition scope');
++    must(manifest.schema_version === 'rop_private_extension_input_manifest_v1' && manifest.candidate_sha256 === candidate.sha256 && manifest.source_admission === false, 'extension manifest identity');
++    must(review.schema_version === 'rop_private_extension_input_review_v1' && review.disposition === 'clean' && arr(review.material_findings).length === 0 && review.reviewer_independent === true && review.source_admission === false && review.consumer_activation === false, 'extension independent input review');
++    same(review.scope, scope, 'extension reviewed scope');
++    must(review.candidate_sha256 === candidate.sha256 && review.input_manifest_sha256 === pin(w.manifestPath).sha256 && review.source_support_commit === binding.sourceSupportCommit, 'extension exact review identity');
++    qualifiedAt = utc(review.completed_at);
++    must(compareArtifactClocks(qualifiedAt, generatedAt) >= 0, 'extension review chronology');
++    identity = `data-retrospective-extension:${w.path}:${binding.paths.candidate}`;
++  }
+   const source: ArtifactRef = { artifactId: identity, revision: candidate.sha256, sha256: candidate.sha256, artifactType: 'evidence_file', digestProfile: RAW_PROFILE, generatedAt: generatedAt as string };
+   must(!validateArtifactReference(source).length, 'invalid evidence generation identity');
+   if (!binding.purposeReceipt) return { source, ...(qualifiedAt ? { qualifiedAt } : {}) };
+@@ -186,13 +218,21 @@
+   must(binding?.releaseWitness && binding?.purposeReceipt, 'sealed private release binding required');
+   return adapt(bytes, binding, output, 'candidate', selection);
+ }
++/** Closed, review-gated successor. No W1–W5 pins or review are reusable here. */
++export function adaptPrivateExtensionAllocation(bytes: ReadonlyMap<string, Uint8Array>, output: OutputIdentity, selection: PrivateExtensionScope): AllocationAdapterResult {
++  must(selection !== null && typeof selection === 'object' && [6,7,8].includes(selection.week), 'unsupported private extension scope');
++  same(selection, {season:2026,seasonType:'REG',week:selection.week}, 'unsupported private extension scope');
++  const binding=PRIVATE_EXTENSION_BINDINGS[selection.week];
++  if (!binding || !binding.extensionWitness || !binding.purposeReceipt) throw Error('offline allocation: sealed, independently reviewed private extension binding required');
++  return adapt(bytes,binding,output,'candidate',selection);
++}
+ /** Test/import seam: caller pins can ONLY produce fixture evidence and synthetic mode. */
+ export function adaptSyntheticAllocation(bytes: ReadonlyMap<string, Uint8Array>, binding: OfflineBinding, output: OutputIdentity, selection: SyntheticAllocationScope = week1): AllocationAdapterResult {
+   must(selection !== null && typeof selection === 'object' && (selection.week === 1 || selection.week === 2 || selection.week === 3), 'unsupported synthetic scope');
+   same(selection, { season: 2026, seasonType: 'REG', week: selection.week }, 'unsupported synthetic scope');
+   return adapt(bytes, binding, output, 'synthetic', selection);
+ }
+-function adapt(input: ReadonlyMap<string, Uint8Array>, suppliedBinding: OfflineBinding, output: OutputIdentity, mode: Handoff['mode'], selection: PrivateReleaseScope): AllocationAdapterResult {
++function adapt(input: ReadonlyMap<string, Uint8Array>, suppliedBinding: OfflineBinding, output: OutputIdentity, mode: Handoff['mode'], selection: PrivateReleaseScope | PrivateExtensionScope): AllocationAdapterResult {
+   const scope = { season: selection.season, season_type: selection.seasonType, week: selection.week };
+   const binding = clone(suppliedBinding), bytes = new Map<string, Uint8Array>();
+   must(new Set(binding.pins.map(p => p.path)).size === binding.pins.length, 'duplicate pins');
+@@ -207,9 +247,11 @@
+   const p = binding.paths, envelope = read(p.candidate), c = obj(envelope.candidate), receipt = read(p.sourceReceipt), scheduleReceipt = read(p.scheduleReceipt);
+   must(envelope.schema_version === 'weekly_boxscore_publication_candidate_v0' && c.schema_version === 'weekly_boxscore_candidate_v0', 'unsupported candidate version');
+   must(envelope.status === 'candidate_needs_review' && c.status === 'candidate_needs_review' && envelope.consumer_admitted === false && c.consumer_admitted === false, 'candidate lifecycle/admission mismatch');
+-  same(c.scope, scope, 'selected scope mismatch'); same(receipt.requested_scope, scope, 'receipt scope');
++  same(c.scope, scope, 'selected scope mismatch');
++  if (binding.extensionWitness) verifyExtensionAcquisitionScope(selection as PrivateExtensionScope, receipt.requested_scope, binding.extensionWitness.sourceAcquisitionWeek);
++  else same(receipt.requested_scope, scope, 'receipt scope');
+   const evidenceRecords: Record<string, string> = {};
+-  for (const path of [binding.replayWitness?.path, binding.replayWitness?.manifestPath, binding.replayWitness?.reviewPath, binding.purposeReceipt?.path, binding.releaseWitness?.path, binding.releaseWitness?.reviewPath])
++  for (const path of [binding.replayWitness?.path, binding.replayWitness?.manifestPath, binding.replayWitness?.reviewPath, binding.purposeReceipt?.path, binding.releaseWitness?.path, binding.releaseWitness?.reviewPath, binding.extensionWitness?.path, binding.extensionWitness?.manifestPath, binding.extensionWitness?.reviewPath])
+     if (path) evidenceRecords[path] = new TextDecoder('utf-8', { fatal: true }).decode(get(path));
+   const identity = allocationEvidenceIdentity(binding, evidenceRecords, selection), generation = identity.source.generatedAt;
+   if (binding.generationWitness) {
+--- /dev/null
++++ b/src/adapters/privateExtensionBindings.ts
+@@ -0,0 +1,6 @@
++/** Review-gated W6–W8 binding registry. Deliberately EMPTY until exact input review,
++ * code review and purpose receipts exist. No fall-through to old W1–W5 pins.
++ * Future populated bindings must be source-generated from pinned private review packets.
++ */
++import type { OfflineBinding } from './weeklyAllocationFromDataV1.ts';
++export const PRIVATE_EXTENSION_BINDINGS: Partial<Readonly<Record<6 | 7 | 8, OfflineBinding>>> = Object.freeze({});
+--- /dev/null
++++ b/tests/privateExtensionGate.test.ts
+@@ -0,0 +1,24 @@
++import { test } from 'node:test';
++import assert from 'node:assert/strict';
++import { adaptPrivateExtensionAllocation, adaptPrivateReleaseAllocation, verifyExtensionAcquisitionScope } from '../src/adapters/weeklyAllocationFromDataV1.ts';
++const output={artifactId:'test-private-extension',revision:'1',generatedAt:'2026-11-03T12:30:00Z'};
++test('new extension never reuses the original W1–W5 review or sealed binding',()=>{
++ for(const week of [6,7,8])
++  assert.throws(()=>adaptPrivateExtensionAllocation(new Map(),output,{season:2026,seasonType:'REG',week} as any),/sealed, independently reviewed private extension binding required/);
++});
++test('extension rejects invalid season, type, week, or extra scope keys before input access',()=>{
++ for(const scope of [{season:2025,seasonType:'REG',week:6},{season:2026,seasonType:'POST',week:6},{season:2026,seasonType:'REG',week:5},{season:2026,seasonType:'REG',week:9},{season:2026,seasonType:'REG',week:6,extra:true}])
++  assert.throws(()=>adaptPrivateExtensionAllocation(new Map(),output,scope as any),/private extension scope/);
++});
++test('old private release still rejects extension weeks',()=>{
++ for(const week of [6,7,8])
++  assert.throws(()=>adaptPrivateReleaseAllocation(new Map(),output,{season:2026,seasonType:'REG',week} as any),/private release scope/);
++});
++
++test('retrospective W6 explicitly retains the original W7 acquisition receipt',()=>{
++ assert.doesNotThrow(()=>verifyExtensionAcquisitionScope({season:2026,seasonType:'REG',week:6},{season:2026,season_type:'REG',week:7},7));
++ assert.doesNotThrow(()=>verifyExtensionAcquisitionScope({season:2026,seasonType:'REG',week:7},{season:2026,season_type:'REG',week:7},7));
++ assert.throws(()=>verifyExtensionAcquisitionScope({season:2026,seasonType:'REG',week:6},{season:2026,season_type:'REG',week:8},8),/unsupported retrospective source scope/);
++ assert.throws(()=>verifyExtensionAcquisitionScope({season:2026,seasonType:'REG',week:6},{season:2026,season_type:'REG',week:6},7),/retrospective acquisition receipt scope/);
++ assert.throws(()=>verifyExtensionAcquisitionScope({season:2026,seasonType:'REG',week:7},{season:2026,season_type:'REG',week:6},6),/unsupported retrospective source scope/);
++});
