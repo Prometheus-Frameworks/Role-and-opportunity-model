@@ -1,0 +1,428 @@
+--- a/src/adapters/weeklyAllocationFromDataV1.ts
++++ b/src/adapters/weeklyAllocationFromDataV1.ts
+@@ -6,6 +6,7 @@
+ import { RETAINED_WEEK2_BINDING } from './retainedWeek2Binding.ts';
+ import { RETAINED_WEEK3_BINDING } from './retainedWeek3Binding.ts';
+ import { PRIVATE_RELEASE_BINDINGS, PRIVATE_RELEASE_INPUT_MANIFEST_SHA256 } from './privateReleaseBindings.ts';
++import { PRIVATE_EXTENSION_BINDINGS } from './privateExtensionBindings.ts';
+ 
+ export type RawPin = { path: string; size: number; sha256: string };
+ export type OfflineBinding = {
+@@ -17,6 +18,8 @@
+   generationWitness?: { path: string; dataBase: string };
+   /** Fixed, independently input-reviewed private retrospective release; no source admission. */
+   releaseWitness?: { path: string; reviewPath: string };
++  /** Separate W6–W8 review lineage. Never shares the W1–W5 batch review or purpose receipt. */
++  extensionWitness?: { path: string; manifestPath: string; reviewPath: string; sourceAcquisitionWeek: 6 | 7 | 8 };
+   games: readonly string[]; paths: Record<'candidate' | 'player' | 'team' | 'schedule' | 'sourceReceipt' | 'scheduleReceipt' | 'sourceLicense' | 'scheduleLicense' | 'publisher' | 'builder', string>;
+   pins: readonly RawPin[];
+ };
+@@ -34,6 +37,18 @@
+ /** Synthetic tests may exercise the same three bounded 2026 REG weekly scopes. */
+ export type SyntheticAllocationScope = { season: 2026; seasonType: 'REG'; week: 1 | 2 | 3 };
+ export type PrivateReleaseScope = { season: 2026; seasonType: 'REG'; week: 1 | 2 | 3 | 4 | 5 };
++export type PrivateExtensionScope = { season: 2026; seasonType: 'REG'; week: 6 | 7 | 8 };
++function extensionScope(selection: PrivateExtensionScope): void {
++  must(selection !== null && typeof selection === 'object' && [6,7,8].includes(selection.week), 'unsupported private extension scope');
++  same(selection, {season:2026,seasonType:'REG',week:selection.week}, 'unsupported private extension scope');
++}
++/** Explicit acquisition-scope witness; season-to-date source containers are not relabeled. */
++export function verifyExtensionAcquisitionScope(selection: PrivateExtensionScope, receiptScope: unknown, sourceAcquisitionWeek: 6 | 7 | 8): void {
++  extensionScope(selection);
++  must(sourceAcquisitionWeek===selection.week || (selection.week===6 && sourceAcquisitionWeek===7), 'unsupported retrospective source scope');
++  same(receiptScope, {season:2026,season_type:'REG',week:sourceAcquisitionWeek}, 'retrospective acquisition receipt scope');
++}
++
+ const week1: ReviewedAllocationScope = { season: 2026, seasonType: 'REG', week: 1 };
+ const core = { carries: 'carries', targets: 'targets', receptions: 'receptions', passAttempts: 'attempts' } as const;
+ const fields = Object.keys(core) as Field[];
+@@ -78,6 +93,8 @@
+  * receives only these raw record strings, pinned by the unchanged lossless companion.
+  * Source/member byte qualification remains the adapter's responsibility. */
+ export function allocationEvidenceIdentity(binding: OfflineBinding, records: Readonly<Record<string, string>>, scope: Handoff['scope']): { source: ArtifactRef; qualifiedAt?: string; receipt?: ArtifactRef; purposes?: Handoff['purpose']['purposes'] } {
++  // Reject mixed authorities before processing any historical witness.
++  if (binding.extensionWitness) must(!binding.releaseWitness && !binding.replayWitness && !binding.generationWitness, 'extension cannot reuse historical qualification');
+   const pin = (path: string): RawPin => {
+     const matches = binding.pins.filter(p => p.path === path);
+     must(matches.length === 1, 'evidence record support pin'); return matches[0];
+@@ -140,6 +157,43 @@
+     must(compareArtifactClocks(qualifiedAt, generatedAt) >= 0, 'private release review chronology');
+     identity = `data-retrospective-release:${w.path}:${binding.paths.candidate}`;
+   }
++  if (binding.extensionWitness) {
++    must(scope.season === 2026 && scope.seasonType === 'REG' && [6,7,8].includes(scope.week), 'private extension scope');
++    must(binding.purposeReceipt, 'extension purpose receipt required');
++    const w = binding.extensionWitness;
++    const controls = [w.manifestPath, w.reviewPath, binding.purposeReceipt!.path];
++    const required = [...Object.values(binding.paths), w.path, ...controls];
++    must(required.every(p => typeof p === 'string' && p.trim().length > 0) && new Set(required).size === required.length, 'distinct extension dependencies required');
++    for (const path of required) pin(path);
++    const build = record(w.path), manifest = record(w.manifestPath), review = record(w.reviewPath);
++    verifyExtensionAcquisitionScope(scope as PrivateExtensionScope, {season:2026,season_type:'REG',week:w.sourceAcquisitionWeek}, w.sourceAcquisitionWeek);
++    same(build.scope, scope, 'extension witness scope mismatch');
++    same(build.source_acquisition_scope, {season:2026,seasonType:'REG',week:w.sourceAcquisitionWeek}, 'extension acquisition scope mismatch');
++    must(build.schema_version === 'rop_private_extension_binding_witness_v1' && build.status === 'pending_independent_review' && build.source_admission === false && build.consumer_activation === false && build.evidence_cutoff === null && build.finality === 'unknown' && build.correction === 'open', 'extension witness eligibility');
++    must(build.candidate_sha256 === candidate.sha256 && build.source_support_commit === binding.sourceSupportCommit, 'extension candidate identity mismatch');
++    same(binding.generationEvidence, `${w.path}#candidate_generated_at`, 'extension generation locator');
++    generatedAt = utc(build.candidate_generated_at);
++    must(binding.candidateGeneratedAt === generatedAt && compareArtifactClocks(utc(build.preparation_generated_at), generatedAt) >= 0, 'extension materialization chronology');
++    same(manifest.scope, scope, 'extension manifest scope');
++    same(manifest.source_acquisition_scope, {season:2026,seasonType:'REG',week:w.sourceAcquisitionWeek}, 'extension manifest acquisition scope');
++    must(manifest.schema_version === 'rop_private_extension_input_manifest_v1' && manifest.candidate_sha256 === candidate.sha256 && manifest.source_admission === false, 'extension manifest identity');
++    // Every pinned input consumed by adapt is inventoried, including the build witness.
++    // Manifest/review/purpose records are separately pinned control records: including
++    // their hashes in this inventory would introduce self/review hash cycles.
++    const inputs = arr(manifest.inputs).map(obj);
++    must(new Set(inputs.map(m => m.path)).size === inputs.length, 'duplicate extension manifest inputs');
++    for (const m of inputs) same(Object.keys(m).sort(), ['path','sha256','size'], 'extension manifest input fields');
++    const order = (a: RawPin, b: RawPin): number => a.path < b.path ? -1 : a.path > b.path ? 1 : 0;
++    const expected = binding.pins.filter(p => !controls.includes(p.path)).map(p => ({path:p.path,size:p.size,sha256:p.sha256})).sort(order);
++    const actual = inputs.map(m => ({path:str(m.path),size:m.size,sha256:m.sha256})).sort((a,b) => a.path < b.path ? -1 : a.path > b.path ? 1 : 0);
++    same(actual, expected, 'extension complete input inventory mismatch');
++    must(review.schema_version === 'rop_private_extension_input_review_v1' && review.disposition === 'clean' && arr(review.material_findings).length === 0 && review.reviewer_independent === true && review.source_admission === false && review.consumer_activation === false, 'extension independent input review');
++    same(review.scope, scope, 'extension reviewed scope');
++    must(review.candidate_sha256 === candidate.sha256 && review.input_manifest_sha256 === pin(w.manifestPath).sha256 && review.source_support_commit === binding.sourceSupportCommit, 'extension exact review identity');
++    qualifiedAt = utc(review.completed_at);
++    must(compareArtifactClocks(qualifiedAt, generatedAt) >= 0 && compareArtifactClocks(qualifiedAt, utc(build.preparation_generated_at)) >= 0, 'extension review chronology');
++    identity = `data-retrospective-extension:${w.path}:${binding.paths.candidate}`;
++  }
+   const source: ArtifactRef = { artifactId: identity, revision: candidate.sha256, sha256: candidate.sha256, artifactType: 'evidence_file', digestProfile: RAW_PROFILE, generatedAt: generatedAt as string };
+   must(!validateArtifactReference(source).length, 'invalid evidence generation identity');
+   if (!binding.purposeReceipt) return { source, ...(qualifiedAt ? { qualifiedAt } : {}) };
+@@ -151,7 +205,7 @@
+   const purposes = arr(r.purposes);
+   must(purposes.length > 0 && new Set(purposes).size === purposes.length && purposes.every(p => p === 'rop_observed_role' || p === 'tts_allocation'), 'purpose receipt purposes');
+   const receipt: ArtifactRef = { artifactId: `operator-receipt:${path}`, revision: p.sha256, sha256: p.sha256, artifactType: 'evidence_file', digestProfile: RAW_PROFILE, generatedAt: utc(r.accepted_at) };
+-  must(compareArtifactClocks(receipt.generatedAt, source.generatedAt) >= 0 && (!binding.replayWitness || compareArtifactClocks(receipt.generatedAt, utc(obj(record(binding.replayWitness.reviewPath).data).fresh_independent_replay_completed_at)) >= 0), 'purpose receipt chronology');
++  must(compareArtifactClocks(receipt.generatedAt, source.generatedAt) >= 0 && (!binding.replayWitness || compareArtifactClocks(receipt.generatedAt, utc(obj(record(binding.replayWitness.reviewPath).data).fresh_independent_replay_completed_at)) >= 0) && (!binding.extensionWitness || compareArtifactClocks(receipt.generatedAt, qualifiedAt!) >= 0), 'purpose receipt chronology');
+   return { source, ...(qualifiedAt ? { qualifiedAt } : {}), receipt, purposes: purposes as Handoff['purpose']['purposes'] };
+ }
+ export type AllocationAdapterResult = {
+@@ -186,13 +240,28 @@
+   must(binding?.releaseWitness && binding?.purposeReceipt, 'sealed private release binding required');
+   return adapt(bytes, binding, output, 'candidate', selection);
+ }
++/** Closed, review-gated successor. No W1–W5 pins or review are reusable here. */
++export function adaptPrivateExtensionAllocation(bytes: ReadonlyMap<string, Uint8Array>, output: OutputIdentity, selection: PrivateExtensionScope): AllocationAdapterResult {
++  extensionScope(selection);
++  const binding=PRIVATE_EXTENSION_BINDINGS[selection.week];
++  if (!binding || !binding.extensionWitness || !binding.purposeReceipt) throw Error('offline allocation: sealed, independently reviewed private extension binding required');
++  return adapt(bytes,binding,output,'candidate',selection);
++}
++/** Synthetic-only seam for populated extension packets. Caller pins never select a
++ * production binding or produce source-mode evidence; all qualification gates still run.
++ */
++export function adaptSyntheticPrivateExtensionAllocation(bytes: ReadonlyMap<string, Uint8Array>, binding: OfflineBinding, output: OutputIdentity, selection: PrivateExtensionScope): AllocationAdapterResult {
++  extensionScope(selection);
++  must(binding.extensionWitness && binding.purposeReceipt, 'synthetic extension witness and purpose receipt required');
++  return adapt(bytes,binding,output,'synthetic',selection);
++}
+ /** Test/import seam: caller pins can ONLY produce fixture evidence and synthetic mode. */
+ export function adaptSyntheticAllocation(bytes: ReadonlyMap<string, Uint8Array>, binding: OfflineBinding, output: OutputIdentity, selection: SyntheticAllocationScope = week1): AllocationAdapterResult {
+   must(selection !== null && typeof selection === 'object' && (selection.week === 1 || selection.week === 2 || selection.week === 3), 'unsupported synthetic scope');
+   same(selection, { season: 2026, seasonType: 'REG', week: selection.week }, 'unsupported synthetic scope');
+   return adapt(bytes, binding, output, 'synthetic', selection);
+ }
+-function adapt(input: ReadonlyMap<string, Uint8Array>, suppliedBinding: OfflineBinding, output: OutputIdentity, mode: Handoff['mode'], selection: PrivateReleaseScope): AllocationAdapterResult {
++function adapt(input: ReadonlyMap<string, Uint8Array>, suppliedBinding: OfflineBinding, output: OutputIdentity, mode: Handoff['mode'], selection: PrivateReleaseScope | PrivateExtensionScope): AllocationAdapterResult {
+   const scope = { season: selection.season, season_type: selection.seasonType, week: selection.week };
+   const binding = clone(suppliedBinding), bytes = new Map<string, Uint8Array>();
+   must(new Set(binding.pins.map(p => p.path)).size === binding.pins.length, 'duplicate pins');
+@@ -207,9 +276,11 @@
+   const p = binding.paths, envelope = read(p.candidate), c = obj(envelope.candidate), receipt = read(p.sourceReceipt), scheduleReceipt = read(p.scheduleReceipt);
+   must(envelope.schema_version === 'weekly_boxscore_publication_candidate_v0' && c.schema_version === 'weekly_boxscore_candidate_v0', 'unsupported candidate version');
+   must(envelope.status === 'candidate_needs_review' && c.status === 'candidate_needs_review' && envelope.consumer_admitted === false && c.consumer_admitted === false, 'candidate lifecycle/admission mismatch');
+-  same(c.scope, scope, 'selected scope mismatch'); same(receipt.requested_scope, scope, 'receipt scope');
++  same(c.scope, scope, 'selected scope mismatch');
++  if (binding.extensionWitness) verifyExtensionAcquisitionScope(selection as PrivateExtensionScope, receipt.requested_scope, binding.extensionWitness.sourceAcquisitionWeek);
++  else same(receipt.requested_scope, scope, 'receipt scope');
+   const evidenceRecords: Record<string, string> = {};
+-  for (const path of [binding.replayWitness?.path, binding.replayWitness?.manifestPath, binding.replayWitness?.reviewPath, binding.purposeReceipt?.path, binding.releaseWitness?.path, binding.releaseWitness?.reviewPath])
++  for (const path of [binding.replayWitness?.path, binding.replayWitness?.manifestPath, binding.replayWitness?.reviewPath, binding.purposeReceipt?.path, binding.releaseWitness?.path, binding.releaseWitness?.reviewPath, binding.extensionWitness?.path, binding.extensionWitness?.manifestPath, binding.extensionWitness?.reviewPath])
+     if (path) evidenceRecords[path] = new TextDecoder('utf-8', { fatal: true }).decode(get(path));
+   const identity = allocationEvidenceIdentity(binding, evidenceRecords, selection), generation = identity.source.generatedAt;
+   if (binding.generationWitness) {
+--- /dev/null
++++ b/src/adapters/privateExtensionBindings.ts
+@@ -0,0 +1,6 @@
++/** Review-gated W6–W8 binding registry. Deliberately EMPTY until exact input review,
++ * code review and purpose receipts exist. No fall-through to old W1–W5 pins.
++ * Future populated bindings must be source-generated from pinned private review packets.
++ */
++import type { OfflineBinding } from './weeklyAllocationFromDataV1.ts';
++export const PRIVATE_EXTENSION_BINDINGS: Partial<Readonly<Record<6 | 7 | 8, OfflineBinding>>> = Object.freeze({});
+--- /dev/null
++++ b/tests/privateExtensionGate.test.ts
+@@ -0,0 +1,194 @@
++import { test } from 'node:test';
++import assert from 'node:assert/strict';
++import { adaptPrivateExtensionAllocation, adaptPrivateReleaseAllocation, adaptSyntheticAllocation, adaptSyntheticPrivateExtensionAllocation, allocationEvidenceIdentity, verifyExtensionAcquisitionScope } from '../src/adapters/weeklyAllocationFromDataV1.ts';
++import { PRIVATE_EXTENSION_BINDINGS } from '../src/adapters/privateExtensionBindings.ts';
++import { rawByteSha256 } from '../src/contracts/artifactDigestV1.ts';
++import { validateAllocationHandoffV1 } from '../src/validation/weeklyRoleStateV1.ts';
++import { extensionFixture, extensionOutput } from './fixtures/privateExtensionV1.ts';
++const output={artifactId:'test-private-extension',revision:'1',generatedAt:'2026-11-03T12:30:00Z'};
++test('new extension never reuses the original W1–W5 review or sealed binding',()=>{
++ for(const week of [6,7,8])
++  assert.throws(()=>adaptPrivateExtensionAllocation(new Map(),output,{season:2026,seasonType:'REG',week} as any),/sealed, independently reviewed private extension binding required/);
++});
++test('extension rejects invalid season, type, week, or extra scope keys before input access',()=>{
++ for(const scope of [{season:2025,seasonType:'REG',week:6},{season:2026,seasonType:'POST',week:6},{season:2026,seasonType:'REG',week:5},{season:2026,seasonType:'REG',week:9},{season:2026,seasonType:'REG',week:6,extra:true}])
++  assert.throws(()=>adaptPrivateExtensionAllocation(new Map(),output,scope as any),/private extension scope/);
++});
++test('old private release still rejects extension weeks',()=>{
++ for(const week of [6,7,8])
++  assert.throws(()=>adaptPrivateReleaseAllocation(new Map(),output,{season:2026,seasonType:'REG',week} as any),/private release scope/);
++});
++
++test('retrospective W6 explicitly retains the original W7 acquisition receipt',()=>{
++ assert.doesNotThrow(()=>verifyExtensionAcquisitionScope({season:2026,seasonType:'REG',week:6},{season:2026,season_type:'REG',week:7},7));
++ assert.doesNotThrow(()=>verifyExtensionAcquisitionScope({season:2026,seasonType:'REG',week:7},{season:2026,season_type:'REG',week:7},7));
++ assert.throws(()=>verifyExtensionAcquisitionScope({season:2026,seasonType:'REG',week:6},{season:2026,season_type:'REG',week:8},8),/unsupported retrospective source scope/);
++ assert.throws(()=>verifyExtensionAcquisitionScope({season:2026,seasonType:'REG',week:6},{season:2026,season_type:'REG',week:6},7),/retrospective acquisition receipt scope/);
++ assert.throws(()=>verifyExtensionAcquisitionScope({season:2026,seasonType:'REG',week:7},{season:2026,season_type:'REG',week:6},6),/unsupported retrospective source scope/);
++});
++
++type Packet = ReturnType<typeof extensionFixture>;
++const adapt = (f: Packet) => adaptSyntheticPrivateExtensionAllocation(f.bytes,f.binding,extensionOutput,f.selection);
++for (const week of [6,7,8] as const) test(`populated synthetic W${week} exercises the full adapter and qualification path`,()=>{
++ const f=extensionFixture(week), r=adapt(f), w=f.binding.extensionWitness!;
++ assert.equal(r.handoff.mode,'synthetic'); assert.deepEqual(r.handoff.scope,f.selection);
++ assert.equal(r.handoff.teams.length,2); assert.equal(r.handoff.teams.flatMap(t=>t.rows).length,6);
++ assert.equal(r.handoff.teams[0].totals.carries.value,6);
++ assert.equal(validateAllocationHandoffV1(r.handoff).valid,true);
++ assert(r.handoff.evidence.every(e=>e.kind==='fixture'||e.kind==='derived'));
++ assert.deepEqual(r.handoff.purpose,{status:'pending',purposes:[],evidence:[]});
++ assert.equal(r.handoff.finality,'unknown'); assert.equal(r.handoff.correction,'open'); assert.equal(r.handoff.evidenceCutoff,null);
++ assert.equal(r.companion.verification.basis,'synthetic_pins');
++ assert.equal(r.companion.verification.sourceAdmission,'none'); assert.equal(r.companion.verification.consumerActivation,'none');
++ assert.deepEqual(r.companion.sourceEnvelope,f.candidate);
++ assert.equal((r.companion.sourceEnvelope as any).candidate.source_receipt.requested_scope.week,week===6?7:week);
++ const identity=allocationEvidenceIdentity(r.companion.binding,r.companion.evidenceRecords!,f.selection);
++ assert.equal(identity.source.artifactId,`data-retrospective-extension:${w.path}:${f.binding.paths.candidate}`);
++ assert.equal(identity.qualifiedAt,f.review.completed_at); assert.deepEqual(identity.purposes,['rop_observed_role']);
++ assert.equal(identity.receipt!.sha256,f.rawPin(f.binding.purposeReceipt!.path).sha256);
++ assert.equal(identity.receipt!.generatedAt,f.purpose.accepted_at);
++ const controls=[w.manifestPath,w.reviewPath,f.binding.purposeReceipt!.path];
++ assert.deepEqual(new Set(f.manifest.inputs.map((p:any)=>p.path)),new Set(f.binding.pins.filter(p=>!controls.includes(p.path)).map(p=>p.path)));
++ assert.equal(f.manifest.inputs.length,11); // ten adapter paths plus generation witness
++ assert.equal(rawByteSha256(r.companionBytes),r.companionPin.sha256);
++ assert.deepEqual(adapt(f).companionBytes,r.companionBytes);
++ // Supplying the same populated packet never opens production registry selection.
++ assert(Object.isFrozen(PRIVATE_EXTENSION_BINDINGS)); assert.deepEqual(Object.keys(PRIVATE_EXTENSION_BINDINGS),[]);
++ assert.throws(()=>adaptPrivateExtensionAllocation(f.bytes,extensionOutput,f.selection),/sealed, independently reviewed private extension binding required/);
++ assert.throws(()=>adaptSyntheticAllocation(f.bytes,f.binding,extensionOutput,f.selection as any),/unsupported synthetic scope/);
++});
++test('inventory order has no authority and an additional consumed pin must be inventoried',()=>{
++ const f=extensionFixture(); f.put('extra-support.txt','fictional support\n'); f.refreshInventory();
++ f.manifest.inputs.reverse(); f.rebind(); assert.doesNotThrow(()=>adapt(f));
++});
++for (const index of Array.from({length:11},(_,i)=>i)) test(`manifest rejects omitted consumed input ${index}`,()=>{
++ const f=extensionFixture(); f.manifest.inputs.splice(index,1); f.rebind();
++ assert.throws(()=>adapt(f),/extension complete input inventory mismatch/);
++});
++const inventoryMutations: [string,(f:Packet)=>void,RegExp][]=[
++ ['substituted path',f=>{f.manifest.inputs[0].path='other-source.csv';},/extension complete input inventory mismatch/],
++ ['substituted size',f=>{f.manifest.inputs[0].size++;},/extension complete input inventory mismatch/],
++ ['substituted SHA-256',f=>{f.manifest.inputs[0].sha256='0'.repeat(64);},/extension complete input inventory mismatch/],
++ ['duplicate member',f=>{f.manifest.inputs.push({...f.manifest.inputs[0]});},/duplicate extension manifest inputs/],
++ ['unexpected member',f=>{f.manifest.inputs.push({path:'unknown',size:1,sha256:'0'.repeat(64)});},/extension complete input inventory mismatch/],
++ ['missing inventory',f=>{delete f.manifest.inputs;},/expected array/],
++ ['extra inventory fields',f=>{f.manifest.inputs[0].unreviewed=true;},/extension manifest input fields/],
++ ['new consumed pin omitted',f=>{f.put('extra-support.txt','fictional support\n');},/extension complete input inventory mismatch/],
++];
++for (const [name,edit,gate] of inventoryMutations) test(`manifest fails closed: ${name}, even after review is rehashed`,()=>{
++ const f=extensionFixture(); edit(f); f.rebind(); assert.throws(()=>adapt(f),gate);
++});
++for (const control of ['manifestPath','reviewPath','purpose'] as const) test(`manifest cannot inventory the ${control} control record`,()=>{
++ const f=extensionFixture(), w=f.binding.extensionWitness!;
++ const path=control==='purpose'?f.binding.purposeReceipt!.path:w[control];
++ f.manifest.inputs.push({...f.binding.pins.find(p=>p.path===path)!}); f.rebind();
++ assert.throws(()=>adapt(f),/extension complete input inventory mismatch/);
++});
++test('input drift fails its raw pin; rebinding the input alone still fails the manifest inventory',()=>{
++ const f=extensionFixture(); f.put('license.md','different fictional license\n');
++ assert.throws(()=>adapt(f),/raw-byte pin mismatch license.md/);
++ f.rebind(); assert.throws(()=>adapt(f),/extension complete input inventory mismatch/);
++});
++for (const which of ['path','manifestPath','reviewPath','purpose'] as const) test(`missing ${which} evidence bytes cannot pass`,()=>{
++ const f=extensionFixture(), w=f.binding.extensionWitness!;
++ f.bytes.delete(which==='purpose'?f.binding.purposeReceipt!.path:w[which]);
++ assert.throws(()=>adapt(f),/missing retained bytes/);
++});
++test('inventory comparison also runs at the companion evidence-identity boundary',()=>{
++ const f=extensionFixture(); f.manifest.inputs.pop(); f.rebind();
++ const records=Object.fromEntries([f.binding.extensionWitness!.path,f.binding.extensionWitness!.manifestPath,f.binding.extensionWitness!.reviewPath,f.binding.purposeReceipt!.path].map(p=>[p,new TextDecoder().decode(f.bytes.get(p)!)]));
++ assert.throws(()=>allocationEvidenceIdentity(f.binding,records,f.selection),/extension complete input inventory mismatch/);
++});
++const witnessMutations: [string,(f:Packet)=>void,RegExp][]=[
++ ['scope',f=>{f.witness.scope.week=7;},/extension witness scope mismatch/],
++ ['acquisition scope',f=>{f.witness.source_acquisition_scope.week=6;},/extension acquisition scope mismatch/],
++ ['status',f=>{f.witness.status='accepted';},/extension witness eligibility/],
++ ['source admission',f=>{f.witness.source_admission=true;},/extension witness eligibility/],
++ ['consumer activation',f=>{f.witness.consumer_activation=true;},/extension witness eligibility/],
++ ['cutoff',f=>{f.witness.evidence_cutoff='2026-11-03T12:00:00Z';},/extension witness eligibility/],
++ ['finality',f=>{f.witness.finality='final';},/extension witness eligibility/],
++ ['correction',f=>{f.witness.correction='closed';},/extension witness eligibility/],
++ ['candidate hash',f=>{f.witness.candidate_sha256='0'.repeat(64);},/extension candidate identity mismatch/],
++ ['support commit',f=>{f.witness.source_support_commit='b'.repeat(40);},/extension candidate identity mismatch/],
++ ['generation locator',f=>{f.binding.generationEvidence='historical-receipt#clock';},/extension generation locator/],
++ ['candidate clock',f=>{f.witness.candidate_generated_at='2026-11-03T11:59:59Z';},/extension materialization chronology/],
++ ['preparation before materialization',f=>{f.witness.preparation_generated_at='2026-11-03T12:00:00Z';},/extension materialization chronology/],
++ ['preparation after review',f=>{f.witness.preparation_generated_at='2026-11-03T12:02:00.000001Z';},/extension review chronology/],
++];
++for (const [name,edit,gate] of witnessMutations) test(`witness fails closed: ${name}`,()=>{
++ const f=extensionFixture(); edit(f); f.refreshInventory(); assert.throws(()=>adapt(f),gate);
++});
++for (const authority of ['releaseWitness','replayWitness','generationWitness'] as const) test(`extension rejects incompatible ${authority} before historical qualification`,()=>{
++ const f=extensionFixture(), w=f.binding.extensionWitness!;
++ (f.binding as any)[authority]={path:w.path,manifestPath:w.manifestPath,reviewPath:w.reviewPath,dataBase:'b'.repeat(40),selectedDataHead:'c'.repeat(40),reviewedHead:'d'.repeat(40)};
++ assert.throws(()=>adapt(f),/extension cannot reuse historical qualification/);
++});
++test('purpose and input records cannot alias each other',()=>{
++ const f=extensionFixture(); f.binding.purposeReceipt!.path=f.binding.extensionWitness!.manifestPath;
++ assert.throws(()=>adapt(f),/distinct extension dependencies required/);
++});
++test('synthetic seam still requires extension witness and purpose receipt',()=>{
++ for (const key of ['extensionWitness','purposeReceipt'] as const) {
++  const f=extensionFixture(); delete f.binding[key];
++  assert.throws(()=>adapt(f),/synthetic extension witness and purpose receipt required/);
++ }
++});
++test('synthetic seam rejects caller flags and unsupported scopes',()=>{
++ const f=extensionFixture();
++ for (const scope of [{...f.selection,mode:'candidate'},{...f.selection,accepted:true},{...f.selection,week:5},{...f.selection,week:9},{...f.selection,season:2025},{...f.selection,seasonType:'POST'},null])
++  assert.throws(()=>adaptSyntheticPrivateExtensionAllocation(f.bytes,f.binding,extensionOutput,scope as any),/private extension scope/);
++});
++for (const [week,acquisition,receiptWeek,gate] of [
++ [6,8,8,/unsupported retrospective source scope/],
++ [7,6,6,/unsupported retrospective source scope/],
++ [8,7,7,/unsupported retrospective source scope/],
++ [6,7,6,/retrospective acquisition receipt scope/],
++] as const) test(`acquisition W${week}/W${acquisition}/receipt W${receiptWeek} rejects in full adaptation`,()=>{
++ assert.throws(()=>adapt(extensionFixture(week,acquisition,receiptWeek)),gate);
++});
++const manifestIdentityMutations: [string,(f:Packet)=>void,RegExp][]=[
++ ['scope',f=>{f.manifest.scope.week=7;},/extension manifest scope/],
++ ['acquisition scope',f=>{f.manifest.source_acquisition_scope.week=6;},/extension manifest acquisition scope/],
++ ['candidate hash',f=>{f.manifest.candidate_sha256='0'.repeat(64);},/extension manifest identity/],
++ ['admission',f=>{f.manifest.source_admission=true;},/extension manifest identity/],
++];
++for (const [name,edit,gate] of manifestIdentityMutations) test(`manifest identity fails closed: ${name}`,()=>{
++ const f=extensionFixture(); edit(f); f.rebind(); assert.throws(()=>adapt(f),gate);
++});
++const reviewMutations: [string,(f:Packet)=>void,RegExp][]=[
++ ['disposition',f=>{f.review.disposition='changes_requested';},/extension independent input review/],
++ ['material findings',f=>{f.review.material_findings=['unresolved'];},/extension independent input review/],
++ ['independence claim',f=>{f.review.reviewer_independent=false;},/extension independent input review/],
++ ['source admission',f=>{f.review.source_admission=true;},/extension independent input review/],
++ ['consumer activation',f=>{f.review.consumer_activation=true;},/extension independent input review/],
++ ['scope',f=>{f.review.scope.week=7;},/extension reviewed scope/],
++ ['candidate hash',f=>{f.review.candidate_sha256='0'.repeat(64);},/extension exact review identity/],
++ ['manifest hash',f=>{f.review.input_manifest_sha256='0'.repeat(64);},/extension exact review identity/],
++ ['support commit',f=>{f.review.source_support_commit='b'.repeat(40);},/extension exact review identity/],
++ ['before generation',f=>{f.review.completed_at='2026-11-03T12:00:00Z';},/extension review chronology/],
++ ['before preparation',f=>{f.review.completed_at='2026-11-03T12:00:30Z';},/extension review chronology/],
++];
++for (const [name,edit,gate] of reviewMutations) test(`review fails closed: ${name}`,()=>{
++ const f=extensionFixture(); edit(f); f.rebind(name!=='manifest hash'); assert.throws(()=>adapt(f),gate);
++});
++const purposeMutations: [string,(f:Packet)=>void,RegExp][]=[
++ ['status',f=>{f.purpose.status='pending';},/purpose receipt eligibility/],
++ ['source admission',f=>{f.purpose.source_admission=true;},/purpose receipt eligibility/],
++ ['execution authorization',f=>{f.purpose.execution_authorized=true;},/purpose receipt eligibility/],
++ ['consumer activation',f=>{f.purpose.consumer_activation=true;},/purpose receipt eligibility/],
++ ['scope',f=>{f.purpose.scope.week=5;},/purpose receipt scope mismatch/],
++ ['historical evidence identity',f=>{f.purpose.evidence_artifact.artifactId='data-retrospective-release:old:candidate.json';},/purpose receipt evidence identity mismatch/],
++ ['candidate hash',f=>{f.purpose.evidence_artifact.sha256='0'.repeat(64);},/purpose receipt evidence identity mismatch/],
++ ['empty purposes',f=>{f.purpose.purposes=[];},/purpose receipt purposes/],
++ ['duplicate purposes',f=>{f.purpose.purposes.push('rop_observed_role');},/purpose receipt purposes/],
++ ['unsupported purpose',f=>{f.purpose.purposes=['forecast'];},/purpose receipt purposes/],
++ ['before generation',f=>{f.purpose.accepted_at='2026-11-03T12:00:00Z';},/purpose receipt chronology/],
++ ['before independent review',f=>{f.purpose.accepted_at='2026-11-03T12:01:30Z';},/purpose receipt chronology/],
++];
++for (const [name,edit,gate] of purposeMutations) test(`purpose receipt fails closed: ${name}`,()=>{
++ const f=extensionFixture(); edit(f); f.rebind(); assert.throws(()=>adapt(f),gate);
++});
++test('handoff cannot predate exact independent review',()=>{
++ const f=extensionFixture();
++ assert.throws(()=>adaptSyntheticPrivateExtensionAllocation(f.bytes,f.binding,{...extensionOutput,generatedAt:'2026-11-03T12:01:59Z'},f.selection),/artifact chronology\/identity/);
++});
+--- /dev/null
++++ b/tests/fixtures/privateExtensionV1.ts
+@@ -0,0 +1,75 @@
++/** Fictional AAA/BBB packets only. No NFL/source bytes or producer execution. */
++import { fixture } from './allocationFromDataV1.ts';
++import { RAW_PROFILE } from '../../src/contracts/artifactDigestV1.ts';
++import { readSourceCsv, type PrivateExtensionScope } from '../../src/adapters/weeklyAllocationFromDataV1.ts';
++
++type Week = PrivateExtensionScope['week'];
++export const extensionOutput = { artifactId:'synthetic:private-extension', revision:'1', generatedAt:'2026-11-03T12:04:00Z' };
++export function extensionFixture(week: Week = 6, sourceAcquisitionWeek: Week = week === 6 ? 7 : week, receiptWeek: Week = sourceAcquisitionWeek) {
++  const f = fixture(), selection: PrivateExtensionScope = {season:2026,seasonType:'REG',week};
++  const gamePrefix = `2026_${String(week).padStart(2,'0')}_`;
++  const walk = (v: any): any => Array.isArray(v) ? v.map(walk) : v && typeof v === 'object'
++    ? Object.fromEntries(Object.entries(v).map(([k,x]) => [k,k === 'week' ? typeof x === 'string' ? String(week) : week : walk(x)]))
++    : typeof v === 'string' ? v.replaceAll('2026_01_',gamePrefix) : v;
++  for (const path of ['player.csv','team.csv','games.csv']) {
++    const rows = readSourceCsv(f.bytes.get(path)!).map(r => walk(r)), keys = Object.keys(rows[0]);
++    f.put(path,[keys.join(','),...rows.map(r => keys.map(k => r[k]).join(','))].join('\n')+'\n');
++  }
++  Object.assign(f.candidate,walk(f.candidate));
++  f.binding.games = f.binding.games.map(g => g.replace('2026_01_',gamePrefix));
++  const receipt = f.candidate.candidate.source_receipt;
++  receipt.requested_scope.week = receiptWeek;
++  for (const kind of ['player','team']) Object.assign(receipt.sources[kind],f.rawPin(`${kind}.csv`));
++  f.put('source.json',receipt);
++  f.candidate.source_receipt_sha256 = f.rawPin('source.json').sha256;
++  Object.assign(f.candidate.schedule_receipt,f.rawPin('games.csv'));
++  const schedule = {...f.candidate.schedule_receipt}; delete schedule.source_support_commit;
++  f.put('schedule.json',schedule);
++  f.binding.candidateGeneratedAt = '2026-11-03T12:00:00.000001Z';
++  const w = {path:'extension-witness.json',manifestPath:'extension-manifest.json',reviewPath:'extension-review.json',sourceAcquisitionWeek};
++  f.binding.extensionWitness = w;
++  f.binding.purposeReceipt = {path:'extension-purpose.json'};
++  f.binding.generationEvidence = `${w.path}#candidate_generated_at`;
++  f.rebind();
++  const candidateHash = f.rawPin(f.binding.paths.candidate).sha256;
++  const witness: any = {
++    schema_version:'rop_private_extension_binding_witness_v1', status:'pending_independent_review',
++    scope:{...selection}, source_acquisition_scope:{...selection,week:sourceAcquisitionWeek},
++    candidate_sha256:candidateHash, source_support_commit:f.binding.sourceSupportCommit,
++    candidate_generated_at:f.binding.candidateGeneratedAt, preparation_generated_at:'2026-11-03T12:01:00Z',
++    source_admission:false, consumer_activation:false, evidence_cutoff:null, finality:'unknown', correction:'open',
++  };
++  const manifest: any = {
++    schema_version:'rop_private_extension_input_manifest_v1', scope:{...selection},
++    source_acquisition_scope:{...selection,week:sourceAcquisitionWeek}, candidate_sha256:candidateHash,
++    source_admission:false, inputs:[],
++  };
++  const review: any = {
++    schema_version:'rop_private_extension_input_review_v1', disposition:'clean', material_findings:[],
++    reviewer_independent:true, scope:{...selection}, candidate_sha256:candidateHash,
++    input_manifest_sha256:'', source_support_commit:f.binding.sourceSupportCommit,
++    completed_at:'2026-11-03T12:02:00Z', source_admission:false, consumer_activation:false,
++  };
++  const purpose: any = {
++    schema_version:'rop_provisional_purpose_receipt_v1', status:'accepted', scope:{...selection},
++    evidence_artifact:{artifactId:`data-retrospective-extension:${w.path}:${f.binding.paths.candidate}`,
++      revision:candidateHash,sha256:candidateHash,artifactType:'evidence_file',digestProfile:RAW_PROFILE,generatedAt:f.binding.candidateGeneratedAt},
++    purposes:['rop_observed_role'],accepted_at:'2026-11-03T12:03:00Z',
++    source_admission:false, execution_authorized:false, consumer_activation:false,
++  };
++  // Re-pin deliberately mutated controls so tests reach semantic gates, not stale hashes.
++  // Inventory is NOT repaired here: a bad inventory remains bad even with a rehashed review.
++  const rebind = (refreshReviewManifestHash = true) => {
++    f.put(w.path,witness); f.put(w.manifestPath,manifest);
++    if (refreshReviewManifestHash) review.input_manifest_sha256 = f.rawPin(w.manifestPath).sha256;
++    f.put(w.reviewPath,review); f.put(f.binding.purposeReceipt!.path,purpose); f.rebind();
++  };
++  const refreshInventory = () => {
++    f.put(w.path,witness); f.rebind();
++    const controls = [w.manifestPath,w.reviewPath,f.binding.purposeReceipt!.path];
++    manifest.inputs = f.binding.pins.filter(p => !controls.includes(p.path)).map(p => ({...p}));
++    rebind();
++  };
++  refreshInventory();
++  return {...f,selection,witness,manifest,review,purpose,rebind,refreshInventory};
++}
